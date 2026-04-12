@@ -1,4 +1,5 @@
 import type { Message } from "discord.js";
+import type { BotCommand, SupportedLang } from "../types/command.js";
 
 import { parsePrefixArgs } from "../commands/argParser.js";
 import { buildPrefixUsage } from "../commands/usage.js";
@@ -13,6 +14,24 @@ import { createPrefixReply } from "./replyAdapter.js";
 interface PrefixHandlerDeps extends HandlerExecutionDeps {
   executor: CommandExecutor;
 }
+
+const resolvePrefixLang = (
+  deps: PrefixHandlerDeps,
+  command: BotCommand,
+  trigger: string,
+  fallbackLang: SupportedLang,
+  guildPreferredLocale?: string | null,
+): SupportedLang => {
+
+  const contextualLang = deps.i18n.resolveLang(guildPreferredLocale);
+  const contextualTrigger = deps.i18n.commandTrigger(contextualLang, command.meta.name);
+
+  if (contextualTrigger === trigger) {
+    return contextualLang;
+  }
+
+  return fallbackLang;
+};
 
 export const createPrefixHandler = (deps: PrefixHandlerDeps) => {
   return async (message: Message): Promise<void> => {
@@ -37,7 +56,7 @@ export const createPrefixHandler = (deps: PrefixHandlerDeps) => {
     const reply = createPrefixReply(message);
 
     const command = match.command;
-    const lang = match.lang;
+    const lang = resolvePrefixLang(deps, command, trigger, match.lang, message.guild?.preferredLocale ?? null);
     const t = createTranslator(deps.i18n, lang);
 
     const parsed = await parsePrefixArgs(message, command.args, rawArgs);
