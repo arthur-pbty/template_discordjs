@@ -69,12 +69,13 @@
       },
       "responses": {
         "slashOnly": "This command is only available as a slash command.",
-        "panel": "Presence panel\nStatus: {{status}}\nActivity: {{activityType}}\nText: {{activityText}}",
+        "panel": "Presence panel\nStatus: {{status}}\nActivity: {{activityType}}\nRotation: every {{rotationIntervalSeconds}}s\nActive text ({{currentTextIndex}}/{{textCount}}): {{activityText}}\nRendered preview: {{activityPreview}}\nTexts: {{activityTexts}}\nVariables ({{doubleBracesHint}}): {{variables}}",
         "statusUpdated": "Status updated to {{status}}.",
         "activityUpdated": "Activity type updated to {{activityType}}.",
         "textUpdated": "Presence text updated to: {{activityText}}",
         "notOwner": "Only the command author can use this panel.",
         "invalidSelection": "Invalid selection received.",
+        "invalidInterval": "Invalid interval. Use an integer between {{minSeconds}} and {{maxSeconds}} seconds.",
         "modalTimeout": "Text update timed out. Click the button again."
       },
       "ui": {
@@ -134,7 +135,7 @@
         },
         "embed": {
           "title": "Presence Configuration",
-          "description": "Change status, activity type, and text in real time.",
+          "description": "Change status, activity type, multiple texts, and rotation interval in real time.",
           "footer": "Interactive /presence panel",
           "fields": {
             "status": "Status",
@@ -142,11 +143,17 @@
             "text": "Text"
           }
         },
-        "textButton": "📝 Edit text",
+        "textButton": "📝 Edit texts",
+        "intervalButton": "⏱️ Interval",
         "modal": {
-          "title": "Presence text",
-          "label": "Activity text",
-          "placeholder": "Example: 🚀 In maintenance"
+          "title": "Presence texts",
+          "label": "One text per line (use {{var}})",
+          "placeholder": "Maintenance\n{{guild_count}} servers | {{prefix}}help"
+        },
+        "intervalModal": {
+          "title": "Rotation interval",
+          "label": "Seconds between each text",
+          "placeholder": "Example: 30"
         }
       }
     },

@@ -69,12 +69,13 @@
       },
       "responses": {
         "slashOnly": "Este comando solo esta disponible como slash.",
-        "panel": "Panel de presencia\nEstado: {{status}}\nActividad: {{activityType}}\nTexto: {{activityText}}",
+        "panel": "Panel de presencia\nEstado: {{status}}\nActividad: {{activityType}}\nRotacion: cada {{rotationIntervalSeconds}}s\nTexto activo ({{currentTextIndex}}/{{textCount}}): {{activityText}}\nVista previa: {{activityPreview}}\nTextos: {{activityTexts}}\nVariables ({{doubleBracesHint}}): {{variables}}",
         "statusUpdated": "Estado actualizado a {{status}}.",
         "activityUpdated": "Tipo de actividad actualizado a {{activityType}}.",
         "textUpdated": "Texto de presencia actualizado: {{activityText}}",
         "notOwner": "Solo el autor del comando puede usar este panel.",
         "invalidSelection": "Seleccion invalida.",
+        "invalidInterval": "Intervalo invalido. Usa un entero entre {{minSeconds}} y {{maxSeconds}} segundos.",
         "modalTimeout": "Tiempo agotado para editar el texto. Pulsa el boton otra vez."
       },
       "ui": {
@@ -134,7 +135,7 @@
         },
         "embed": {
           "title": "Configuracion de Presencia",
-          "description": "Cambia el estado, el tipo de actividad y el texto en tiempo real.",
+          "description": "Cambia el estado, el tipo de actividad, varios textos y el intervalo de rotacion en tiempo real.",
           "footer": "Panel interactivo /presence",
           "fields": {
             "status": "Estado",
@@ -142,11 +143,17 @@
             "text": "Texto"
           }
         },
-        "textButton": "📝 Editar texto",
+        "textButton": "📝 Editar textos",
+        "intervalButton": "⏱️ Intervalo",
         "modal": {
-          "title": "Texto de presencia",
-          "label": "Texto de actividad",
-          "placeholder": "Ejemplo: 🚀 En mantenimiento"
+          "title": "Textos de presencia",
+          "label": "Un texto por linea (usa {{var}})",
+          "placeholder": "Mantenimiento\n{{guild_count}} servidores | {{prefix}}ayuda"
+        },
+        "intervalModal": {
+          "title": "Intervalo de rotacion",
+          "label": "Segundos entre cada texto",
+          "placeholder": "Ejemplo: 30"
         }
       }
     },

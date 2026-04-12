@@ -17,12 +17,23 @@ import { defineCommand } from "../../framework/commands/defineCommand.js";
 import { env } from "../../framework/config/env.js";
 import { getPresenceStore } from "../../framework/presence/presenceStore.js";
 import {
+  PRESENCE_TEMPLATE_REFRESH_INTERVAL_MS,
+  containsPresenceTemplateVariables,
+  getPresenceTemplateHelpText,
+  renderPresenceTemplate,
+} from "../../framework/presence/presenceTemplateVariables.js";
+import {
   PRESENCE_ACTIVITY_TYPES,
   PRESENCE_STATUSES,
+  MAX_ACTIVITY_ROTATION_INTERVAL_SECONDS,
+  MIN_ACTIVITY_ROTATION_INTERVAL_SECONDS,
   createDefaultPresenceState,
   isPresenceActivityTypeValue,
+  isPresenceRotationIntervalSecondsValue,
   isPresenceStatusValue,
   sanitizeActivityText,
+  sanitizeActivityTexts,
+  sanitizePresenceRotationIntervalSeconds,
   type PresenceActivityTypeValue,
   type PresenceState,
   type PresenceStatusValue,
@@ -33,9 +44,16 @@ interface PresenceCustomIds {
   statusSelect: string;
   activitySelect: string;
   textButton: string;
+  intervalButton: string;
   textModal: string;
   textInput: string;
+  intervalModal: string;
+  intervalInput: string;
 }
+
+let dynamicPresenceRefreshTimer: NodeJS.Timeout | null = null;
+let presenceRotationTimer: NodeJS.Timeout | null = null;
+let activePresenceTextIndex = 0;
 
 const DISCORD_ACTIVITY_TYPES: Record<PresenceActivityTypeValue, ActivityType> = {
   PLAYING: ActivityType.Playing,
@@ -52,6 +70,66 @@ const resolveDiscordStatus = (status: PresenceStatusValue): DiscordPresenceStatu
   status === "streaming" ? "online" : status;
 
 const resolveBotId = (client: Client): string | null => client.user?.id ?? null;
+
+const normalizePresenceActivityState = (state: PresenceState): void => {
+  const activityTexts = sanitizeActivityTexts(state.activity.texts);
+  state.activity.texts = activityTexts;
+  state.activity.text = activityTexts[0] ?? sanitizeActivityText(state.activity.text);
+  state.activity.rotationIntervalSeconds = sanitizePresenceRotationIntervalSeconds(state.activity.rotationIntervalSeconds);
+
+  if (activePresenceTextIndex >= activityTexts.length) {
+    activePresenceTextIndex = 0;
+  }
+};
+
+const getActivePresenceTemplateText = (state: PresenceState): string => {
+  normalizePresenceActivityState(state);
+  return state.activity.texts[activePresenceTextIndex] ?? state.activity.text;
+};
+
+const hasTemplateVariablesInPresenceState = (state: PresenceState): boolean => {
+  normalizePresenceActivityState(state);
+  return state.activity.texts.some((templateText) => containsPresenceTemplateVariables(templateText));
+};
+
+const syncDynamicPresenceTimers = (client: Client, state: PresenceState): void => {
+  normalizePresenceActivityState(state);
+
+  if (dynamicPresenceRefreshTimer) {
+    clearInterval(dynamicPresenceRefreshTimer);
+    dynamicPresenceRefreshTimer = null;
+  }
+
+  if (presenceRotationTimer) {
+    clearInterval(presenceRotationTimer);
+    presenceRotationTimer = null;
+  }
+
+  if (state.activity.texts.length > 1) {
+    presenceRotationTimer = setInterval(() => {
+      normalizePresenceActivityState(state);
+      if (state.activity.texts.length <= 1) {
+        activePresenceTextIndex = 0;
+        return;
+      }
+
+      activePresenceTextIndex = (activePresenceTextIndex + 1) % state.activity.texts.length;
+      applyPresenceState(client, state);
+    }, state.activity.rotationIntervalSeconds * 1_000);
+
+    presenceRotationTimer.unref?.();
+  }
+
+  if (!hasTemplateVariablesInPresenceState(state)) {
+    return;
+  }
+
+  dynamicPresenceRefreshTimer = setInterval(() => {
+    applyPresenceState(client, state);
+  }, PRESENCE_TEMPLATE_REFRESH_INTERVAL_MS);
+
+  dynamicPresenceRefreshTimer.unref?.();
+};
 
 const loadPresenceState = async (client: Client): Promise<PresenceState> => {
   const botId = resolveBotId(client);
@@ -76,8 +154,11 @@ const applyPresenceState = (client: Client, state: PresenceState): void => {
     return;
   }
 
+  normalizePresenceActivityState(state);
+
   const status = resolveDiscordStatus(state.status);
-  const text = sanitizeActivityText(state.activity.text);
+  const templateText = getActivePresenceTemplateText(state);
+  const text = renderPresenceTemplate(client, templateText);
   if (state.status === "streaming" || state.activity.type === "STREAMING") {
     client.user.setPresence({
       status,
@@ -123,8 +204,11 @@ const createCustomIds = (): PresenceCustomIds => {
     statusSelect: `presence:status:${nonce}`,
     activitySelect: `presence:activity:${nonce}`,
     textButton: `presence:text:${nonce}`,
+    intervalButton: `presence:interval:${nonce}`,
     textModal: `presence:modal:${nonce}`,
     textInput: `presence:text-input:${nonce}`,
+    intervalModal: `presence:interval-modal:${nonce}`,
+    intervalInput: `presence:interval-input:${nonce}`,
   };
 };
 
@@ -135,10 +219,24 @@ const activityLabel = (ctx: CommandExecutionContext, activityType: PresenceActiv
   ctx.ct(`ui.activity.options.${activityType}.label`);
 
 const panelContent = (ctx: CommandExecutionContext, state: PresenceState): string => {
+  normalizePresenceActivityState(state);
+
+  const templateText = getActivePresenceTemplateText(state);
+  const activityPreview = renderPresenceTemplate(ctx.client, templateText);
+  const activityTexts = state.activity.texts.map((text, index) => `${index + 1}. ${text}`).join(" | ");
+  const currentIndex = Math.min(activePresenceTextIndex + 1, state.activity.texts.length);
+
   const summary = ctx.ct("responses.panel", {
     status: statusLabel(ctx, state.status),
     activityType: activityLabel(ctx, state.activity.type),
-    activityText: sanitizeActivityText(state.activity.text),
+    activityText: templateText,
+    activityPreview,
+    activityTexts,
+    textCount: state.activity.texts.length,
+    currentTextIndex: currentIndex,
+    rotationIntervalSeconds: state.activity.rotationIntervalSeconds,
+    doubleBracesHint: "{{var}}",
+    variables: getPresenceTemplateHelpText(),
   });
 
   return `## ${ctx.ct("ui.embed.title")}\n${ctx.ct("ui.embed.description")}\n\n${summary}`;
@@ -186,6 +284,12 @@ const buildContainer = (
     .setStyle(ButtonStyle.Secondary)
     .setDisabled(disabled);
 
+  const intervalButton = new ButtonBuilder()
+    .setCustomId(customIds.intervalButton)
+    .setLabel(ctx.ct("ui.intervalButton"))
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(disabled);
+
   const container = new ContainerBuilder();
 
   container.addTextDisplayComponents(
@@ -199,7 +303,7 @@ const buildContainer = (
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(activitySelect),
   );
   container.addActionRowComponents(
-    new ActionRowBuilder<ButtonBuilder>().addComponents(textButton),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(textButton, intervalButton),
   );
 
   return container;
@@ -233,12 +337,15 @@ const resolveReplyMessage = (value: unknown): Message | null => {
 
 const persistAndApplyPresence = async (ctx: CommandExecutionContext, state: PresenceState): Promise<void> => {
   applyPresenceState(ctx.client, state);
+  syncDynamicPresenceTimers(ctx.client, state);
   await savePresenceState(ctx.client, state);
 };
 
 export const restorePresenceFromStorage = async (client: Client): Promise<void> => {
   const state = await loadPresenceState(client);
+  activePresenceTextIndex = 0;
   applyPresenceState(client, state);
+  syncDynamicPresenceTimers(client, state);
 };
 
 export const presenceCommand = defineCommand({
@@ -255,6 +362,7 @@ export const presenceCommand = defineCommand({
   execute: async (ctx) => {
     const state = await loadPresenceState(ctx.client);
     applyPresenceState(ctx.client, state);
+    syncDynamicPresenceTimers(ctx.client, state);
 
     const customIds = createCustomIds();
 
@@ -320,54 +428,133 @@ export const presenceCommand = defineCommand({
         }
 
         if (interaction.isButton()) {
-          if (interaction.customId !== customIds.textButton) {
-            await interaction.reply({ content: ctx.ct("responses.invalidSelection"), ephemeral: true });
+          if (interaction.customId === customIds.textButton) {
+            normalizePresenceActivityState(state);
+
+            const modal = new ModalBuilder()
+              .setCustomId(customIds.textModal)
+              .setTitle(ctx.ct("ui.modal.title"))
+              .addComponents(
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                  new TextInputBuilder()
+                    .setCustomId(customIds.textInput)
+                    .setLabel(ctx.ct("ui.modal.label"))
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setPlaceholder(ctx.ct("ui.modal.placeholder"))
+                    .setRequired(true)
+                    .setMaxLength(1_800)
+                    .setValue(state.activity.texts.join("\n")),
+                ),
+              );
+
+            await interaction.showModal(modal);
+
+            try {
+              const submitted = await interaction.awaitModalSubmit({
+                time: 120_000,
+                filter: (modalInteraction) =>
+                  modalInteraction.customId === customIds.textModal
+                  && modalInteraction.user.id === ownerId,
+              });
+
+              const nextTexts = sanitizeActivityTexts(
+                submitted.fields.getTextInputValue(customIds.textInput).split(/\r?\n/g),
+              );
+
+              state.activity.texts = nextTexts;
+              state.activity.text = nextTexts[0] ?? state.activity.text;
+              activePresenceTextIndex = 0;
+              await persistAndApplyPresence(ctx, state);
+
+              await submitted.deferUpdate();
+
+              await replyMessage.edit({
+                flags: MessageFlags.IsComponentsV2,
+                components: [buildContainer(ctx, state, customIds)],
+              });
+            } catch {
+              await interaction.followUp({
+                content: ctx.ct("responses.modalTimeout"),
+                ephemeral: true,
+              }).catch(() => undefined);
+            }
+
             return;
           }
 
-          const modal = new ModalBuilder()
-            .setCustomId(customIds.textModal)
-            .setTitle(ctx.ct("ui.modal.title"))
-            .addComponents(
-              new ActionRowBuilder<TextInputBuilder>().addComponents(
-                new TextInputBuilder()
-                  .setCustomId(customIds.textInput)
-                  .setLabel(ctx.ct("ui.modal.label"))
-                  .setStyle(TextInputStyle.Short)
-                  .setPlaceholder(ctx.ct("ui.modal.placeholder"))
-                  .setRequired(true)
-                  .setMaxLength(128)
-                  .setValue(sanitizeActivityText(state.activity.text)),
-              ),
-            );
+          if (interaction.customId === customIds.intervalButton) {
+            normalizePresenceActivityState(state);
 
-          await interaction.showModal(modal);
+            const modal = new ModalBuilder()
+              .setCustomId(customIds.intervalModal)
+              .setTitle(ctx.ct("ui.intervalModal.title"))
+              .addComponents(
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                  new TextInputBuilder()
+                    .setCustomId(customIds.intervalInput)
+                    .setLabel(ctx.ct("ui.intervalModal.label"))
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder(ctx.ct("ui.intervalModal.placeholder"))
+                    .setRequired(true)
+                    .setMaxLength(4)
+                    .setValue(String(state.activity.rotationIntervalSeconds)),
+                ),
+              );
 
-          try {
-            const submitted = await interaction.awaitModalSubmit({
-              time: 120_000,
-              filter: (modalInteraction) =>
-                modalInteraction.customId === customIds.textModal
-                && modalInteraction.user.id === ownerId,
-            });
+            await interaction.showModal(modal);
 
-            const nextText = sanitizeActivityText(submitted.fields.getTextInputValue(customIds.textInput));
-            state.activity.text = nextText;
-            await persistAndApplyPresence(ctx, state);
+            try {
+              const submitted = await interaction.awaitModalSubmit({
+                time: 120_000,
+                filter: (modalInteraction) =>
+                  modalInteraction.customId === customIds.intervalModal
+                  && modalInteraction.user.id === ownerId,
+              });
 
-            await submitted.deferUpdate();
+              const rawSeconds = submitted.fields.getTextInputValue(customIds.intervalInput).trim();
+              if (!/^\d+$/.test(rawSeconds)) {
+                await submitted.reply({
+                  content: ctx.ct("responses.invalidInterval", {
+                    minSeconds: MIN_ACTIVITY_ROTATION_INTERVAL_SECONDS,
+                    maxSeconds: MAX_ACTIVITY_ROTATION_INTERVAL_SECONDS,
+                  }),
+                  ephemeral: true,
+                });
+                return;
+              }
 
-            await replyMessage.edit({
-              flags: MessageFlags.IsComponentsV2,
-              components: [buildContainer(ctx, state, customIds)],
-            });
-          } catch {
-            await interaction.followUp({
-              content: ctx.ct("responses.modalTimeout"),
-              ephemeral: true,
-            }).catch(() => undefined);
+              const nextSeconds = Number(rawSeconds);
+              if (!isPresenceRotationIntervalSecondsValue(nextSeconds)) {
+                await submitted.reply({
+                  content: ctx.ct("responses.invalidInterval", {
+                    minSeconds: MIN_ACTIVITY_ROTATION_INTERVAL_SECONDS,
+                    maxSeconds: MAX_ACTIVITY_ROTATION_INTERVAL_SECONDS,
+                  }),
+                  ephemeral: true,
+                });
+                return;
+              }
+
+              state.activity.rotationIntervalSeconds = nextSeconds;
+              await persistAndApplyPresence(ctx, state);
+
+              await submitted.deferUpdate();
+
+              await replyMessage.edit({
+                flags: MessageFlags.IsComponentsV2,
+                components: [buildContainer(ctx, state, customIds)],
+              });
+            } catch {
+              await interaction.followUp({
+                content: ctx.ct("responses.modalTimeout"),
+                ephemeral: true,
+              }).catch(() => undefined);
+            }
+
+            return;
           }
 
+          await interaction.reply({ content: ctx.ct("responses.invalidSelection"), ephemeral: true });
           return;
         }
 
