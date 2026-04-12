@@ -44,6 +44,12 @@ export const advancedCommand = defineCommand({
       descriptionKey: "args.count",
     },
     {
+      name: "user",
+      type: "user",
+      required: true,
+      descriptionKey: "args.user",
+    },
+    {
       name: "ratio",
       type: "number",
       required: false,
@@ -54,12 +60,6 @@ export const advancedCommand = defineCommand({
       type: "boolean",
       required: false,
       descriptionKey: "args.enabled",
-    },
-    {
-      name: "user",
-      type: "user",
-      required: true,
-      descriptionKey: "args.user",
     },
     {
       name: "channel",
@@ -76,7 +76,7 @@ export const advancedCommand = defineCommand({
   ],
   examples: [
     {
-      args: '"hello world" 5 1.5 true @Arthur #general @Moderators',
+      args: '"hello world" 5 @Arthur 1.5 true #general @Moderators',
       descriptionKey: "examples.full",
     },
     {

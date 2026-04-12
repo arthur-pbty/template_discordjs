@@ -5,7 +5,8 @@
       "invalidInt": "El argumento debe ser un entero. Recibido: {{value}}",
       "invalidNumber": "El argumento debe ser un numero. Recibido: {{value}}",
       "invalidBoolean": "El argumento debe ser un valor booleano. Recibido: {{value}}",
-      "invalidUser": "No se pudo resolver un usuario desde {{value}}"
+      "invalidUser": "No se pudo resolver un usuario desde {{value}}",
+      "tooMany": "Se detectaron demasiados argumentos ({{count}}): {{extras}}. Uso: {{usage}}"
     },
     "permissions": {
       "user": "Te faltan permisos: {{permissions}}"

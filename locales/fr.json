@@ -5,7 +5,8 @@
       "invalidInt": "L argument doit etre un entier. Recu: {{value}}",
       "invalidNumber": "L argument doit etre un nombre. Recu: {{value}}",
       "invalidBoolean": "L argument doit etre un booleen. Recu: {{value}}",
-      "invalidUser": "Impossible de trouver un utilisateur depuis {{value}}"
+      "invalidUser": "Impossible de trouver un utilisateur depuis {{value}}",
+      "tooMany": "Trop d arguments ({{count}}) detectes: {{extras}}. Usage: {{usage}}"
     },
     "permissions": {
       "user": "Tu n as pas les permissions: {{permissions}}"

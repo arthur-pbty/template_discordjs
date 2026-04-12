@@ -59,6 +59,16 @@ export const parsePrefixArgs = async (
     errors.push(parsed.error);
   }
 
+  if (tokens.length > 0) {
+    errors.push({
+      key: "errors.args.tooMany",
+      vars: {
+        count: tokens.length,
+        extras: tokens.join(" "),
+      },
+    });
+  }
+
   return { values, errors };
 };
 
