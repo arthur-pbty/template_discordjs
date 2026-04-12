@@ -4,13 +4,12 @@
  * Ce fichier centralise l'ordre par défaut des commandes et permet de
  * récupérer facilement la liste pour l'enregistrement (registry/dispatch).
  */
-import { helpCommand } from "./core/help.js";
-import { kissCommand } from "./fun/kiss.js";
-import { advancedCommand } from "./utility/advanced.js";
-import { goodbyeCommand } from "./utility/goodbye.js";
-import { presenceCommand } from "./utility/presence.js";
-import { pingCommand } from "./utility/ping.js";
-import { welcomeCommand } from "./utility/welcome.js";
+import { helpCommand } from "./help.js";
+import { kissCommand } from "./kiss.js";
+import { goodbyeCommand } from "./goodbye.js";
+import { presenceCommand } from "./presence.js";
+import { pingCommand } from "./ping.js";
+import { welcomeCommand } from "./welcome.js";
 
 import type { BotCommand } from "../framework/types/command.js";
 
@@ -18,7 +17,6 @@ import type { BotCommand } from "../framework/types/command.js";
 export const commandList: BotCommand[] = [
   kissCommand,
   pingCommand,
-  advancedCommand,
   welcomeCommand,
   goodbyeCommand,
   presenceCommand,

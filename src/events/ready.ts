@@ -1,7 +1,7 @@
 import { Events, type Client } from "discord.js";
 import { deployApplicationCommands } from "../framework/commands/deploy.js";
 import { env } from "../framework/config/env.js";
-import { restorePresenceFromStorage } from "../commands/utility/presence.js";
+import { restorePresenceFromStorage } from "../commands/presence.js";
 import type { CommandRegistry } from "../framework/commands/registry.js";
 import type { I18nService } from "../framework/i18n/I18nService.js";
 

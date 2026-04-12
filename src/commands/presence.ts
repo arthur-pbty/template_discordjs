@@ -21,15 +21,15 @@ import {
   type Client,
   type Message,
 } from "discord.js";
-import { defineCommand } from "../../framework/commands/defineCommand.js";
-import { env } from "../../framework/config/env.js";
-import { getPresenceStore } from "../../framework/presence/presenceStore.js";
+import { defineCommand } from "../framework/commands/defineCommand.js";
+import { env } from "../framework/config/env.js";
+import { getPresenceStore } from "../framework/presence/presenceStore.js";
 import {
   PRESENCE_TEMPLATE_REFRESH_INTERVAL_MS,
   containsPresenceTemplateVariables,
   getPresenceTemplateHelpText,
   renderPresenceTemplate,
-} from "../../framework/presence/presenceTemplateVariables.js";
+} from "../framework/presence/presenceTemplateVariables.js";
 import {
   PRESENCE_ACTIVITY_TYPES,
   PRESENCE_STATUSES,
@@ -45,8 +45,8 @@ import {
   type PresenceActivityTypeValue,
   type PresenceState,
   type PresenceStatusValue,
-} from "../../framework/presence/presenceTypes.js";
-import type { CommandExecutionContext } from "../../framework/types/command.js";
+} from "../framework/presence/presenceTypes.js";
+import type { CommandExecutionContext } from "../framework/types/command.js";
 
 interface PresenceCustomIds {
   statusSelect: string;

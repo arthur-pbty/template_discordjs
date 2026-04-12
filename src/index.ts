@@ -11,7 +11,7 @@
 import { Client, GatewayIntentBits } from "discord.js";
 
 import { commandList } from "./commands/index.js";
-import { shutdownPresenceRuntime } from "./commands/utility/presence.js";
+import { shutdownPresenceRuntime } from "./commands/presence.js";
 import { registerEvents } from "./events/index.js";
 import { CommandRegistry } from "./framework/commands/registry.js";
 import { env } from "./framework/config/env.js";

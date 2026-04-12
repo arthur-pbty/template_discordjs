@@ -22,18 +22,18 @@ import {
   type Message,
 } from "discord.js";
 
-import { env } from "../../framework/config/env.js";
-import { I18nService } from "../../framework/i18n/I18nService.js";
-import { dispatchMemberMessage } from "../../framework/memberMessages/memberMessageSender.js";
-import { getMemberMessageStore } from "../../framework/memberMessages/memberMessageStore.js";
+import { env } from "../framework/config/env.js";
+import { I18nService } from "../framework/i18n/I18nService.js";
+import { dispatchMemberMessage } from "../framework/memberMessages/memberMessageSender.js";
+import { getMemberMessageStore } from "../framework/memberMessages/memberMessageStore.js";
 import {
   MEMBER_MESSAGE_RENDER_TYPES,
   isMemberMessageRenderTypeValue,
   type MemberMessageConfig,
   type MemberMessageKind,
   type MemberMessageRenderType,
-} from "../../framework/memberMessages/memberMessageTypes.js";
-import type { CommandExecutionContext } from "../../framework/types/command.js";
+} from "../framework/memberMessages/memberMessageTypes.js";
+import type { CommandExecutionContext } from "../framework/types/command.js";
 
 const memberMessageI18n = new I18nService(env.DEFAULT_LANG);
 
