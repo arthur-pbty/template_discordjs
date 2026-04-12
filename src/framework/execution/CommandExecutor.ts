@@ -7,8 +7,12 @@ import {
 
 import type { BotCommand, CommandExecutionContext } from "../types/command.js";
 
+const COOLDOWN_SWEEP_INTERVAL_MS = 60_000;
+const COOLDOWN_SWEEP_MIN_ENTRIES = 512;
+
 export class CommandExecutor {
   private readonly cooldowns = new Map<string, number>();
+  private lastCooldownSweepAt = 0;
 
   public async run(command: BotCommand, ctx: CommandExecutionContext): Promise<void> {
     const missingUserPermissions = this.getMissingPermissions(command.permissions, this.memberPermissions(ctx));
@@ -89,14 +93,40 @@ export class CommandExecutor {
 
     const key = this.cooldownKey(command.meta.name, userId);
     const now = Date.now();
+    this.sweepExpiredCooldowns(now);
+
     const expiresAt = this.cooldowns.get(key);
 
     if (expiresAt !== undefined && expiresAt > now) {
       return Math.ceil((expiresAt - now) / 1000);
     }
 
+    if (expiresAt !== undefined) {
+      this.cooldowns.delete(key);
+    }
+
     this.cooldowns.set(key, now + command.cooldown * 1000);
     return 0;
+  }
+
+  private sweepExpiredCooldowns(now: number): void {
+    if (this.cooldowns.size === 0) {
+      return;
+    }
+
+    const shouldSweepBySize = this.cooldowns.size >= COOLDOWN_SWEEP_MIN_ENTRIES;
+    const shouldSweepByTime = now - this.lastCooldownSweepAt >= COOLDOWN_SWEEP_INTERVAL_MS;
+    if (!shouldSweepBySize && !shouldSweepByTime) {
+      return;
+    }
+
+    for (const [key, expiresAt] of this.cooldowns.entries()) {
+      if (expiresAt <= now) {
+        this.cooldowns.delete(key);
+      }
+    }
+
+    this.lastCooldownSweepAt = now;
   }
 
   private cooldownKey(commandName: string, userId: string): string {

@@ -6,6 +6,8 @@
       "invalidNumber": "Argument must be a number. Received: {{value}}",
       "invalidBoolean": "Argument must be a boolean value. Received: {{value}}",
       "invalidUser": "Could not resolve a user from {{value}}",
+      "invalidChannel": "Could not resolve a channel from {{value}}",
+      "invalidRole": "Could not resolve a role from {{value}}",
       "tooMany": "Too many arguments detected ({{count}}): {{extras}}. Usage: {{usage}}"
     },
     "permissions": {

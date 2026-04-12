@@ -1,4 +1,4 @@
-import type { ChatInputCommandInteraction, Message } from "discord.js";
+import type { ChatInputCommandInteraction, GuildBasedChannel, Message } from "discord.js";
 
 import type { CommandArgValue, CommandArgument, TranslationVars } from "../types/command.js";
 
@@ -13,10 +13,16 @@ export interface ParsedArgumentsResult {
 }
 
 const USER_MENTION_PATTERN = /^<@!?(\d{16,22})>$/;
-const USER_ID_PATTERN = /^(\d{16,22})$/;
+const CHANNEL_MENTION_PATTERN = /^<#(\d{16,22})>$/;
+const ROLE_MENTION_PATTERN = /^<@&(\d{16,22})>$/;
+const SNOWFLAKE_ID_PATTERN = /^(\d{16,22})$/;
 
 const BOOLEAN_TRUE = new Set(["true", "1", "yes", "y", "on"]);
 const BOOLEAN_FALSE = new Set(["false", "0", "no", "n", "off"]);
+
+const isGuildBasedChannel = (value: unknown): value is GuildBasedChannel => {
+  return Boolean(value) && typeof value === "object" && "guild" in (value as Record<string, unknown>);
+};
 
 export const tokenizePrefixInput = (raw: string): string[] => {
   const tokens: string[] = [];
@@ -103,16 +109,17 @@ const parseByTypeFromPrefix = async (
       return { ok: true, value: token };
 
     case "int": {
-      const value = Number.parseInt(token, 10);
-      if (Number.isNaN(value)) {
+      if (!/^-?\d+$/.test(token)) {
         return { ok: false, error: { key: "errors.args.invalidInt", vars: { value: token } } };
       }
+
+      const value = Number.parseInt(token, 10);
       return { ok: true, value };
     }
 
     case "number": {
       const value = Number(token);
-      if (Number.isNaN(value)) {
+      if (!Number.isFinite(value)) {
         return { ok: false, error: { key: "errors.args.invalidNumber", vars: { value: token } } };
       }
       return { ok: true, value };
@@ -131,7 +138,7 @@ const parseByTypeFromPrefix = async (
 
     case "user": {
       const mentionMatch = token.match(USER_MENTION_PATTERN);
-      const idMatch = token.match(USER_ID_PATTERN);
+      const idMatch = token.match(SNOWFLAKE_ID_PATTERN);
       const userId = mentionMatch?.[1] ?? idMatch?.[1];
 
       if (!userId) {
@@ -149,6 +156,77 @@ const parseByTypeFromPrefix = async (
       } catch {
         return { ok: false, error: { key: "errors.args.invalidUser", vars: { value: token } } };
       }
+    }
+
+    case "channel": {
+      const mentionMatch = token.match(CHANNEL_MENTION_PATTERN);
+      const idMatch = token.match(SNOWFLAKE_ID_PATTERN);
+      const channelId = mentionMatch?.[1] ?? idMatch?.[1];
+
+      if (!channelId) {
+        return { ok: false, error: { key: "errors.args.invalidChannel", vars: { value: token } } };
+      }
+
+      const fromMention = message.mentions.channels.get(channelId);
+      if (fromMention && isGuildBasedChannel(fromMention)) {
+        return { ok: true, value: fromMention };
+      }
+
+      const fromGuildCache = message.guild?.channels.cache.get(channelId);
+      if (fromGuildCache) {
+        return { ok: true, value: fromGuildCache };
+      }
+
+      try {
+        const fetchedFromGuild = await message.guild?.channels.fetch(channelId);
+        if (fetchedFromGuild) {
+          return { ok: true, value: fetchedFromGuild };
+        }
+      } catch {
+        // Try the global cache/fetch fallback below.
+      }
+
+      try {
+        const fetched = await message.client.channels.fetch(channelId);
+        if (fetched && isGuildBasedChannel(fetched)) {
+          return { ok: true, value: fetched };
+        }
+      } catch {
+        // Falls through to invalid channel error.
+      }
+
+      return { ok: false, error: { key: "errors.args.invalidChannel", vars: { value: token } } };
+    }
+
+    case "role": {
+      const mentionMatch = token.match(ROLE_MENTION_PATTERN);
+      const idMatch = token.match(SNOWFLAKE_ID_PATTERN);
+      const roleId = mentionMatch?.[1] ?? idMatch?.[1];
+
+      if (!roleId || !message.guild) {
+        return { ok: false, error: { key: "errors.args.invalidRole", vars: { value: token } } };
+      }
+
+      const fromMention = message.mentions.roles.get(roleId);
+      if (fromMention) {
+        return { ok: true, value: fromMention };
+      }
+
+      const fromCache = message.guild.roles.cache.get(roleId);
+      if (fromCache) {
+        return { ok: true, value: fromCache };
+      }
+
+      try {
+        const fetched = await message.guild.roles.fetch(roleId);
+        if (fetched) {
+          return { ok: true, value: fetched };
+        }
+      } catch {
+        // Falls through to invalid role error.
+      }
+
+      return { ok: false, error: { key: "errors.args.invalidRole", vars: { value: token } } };
     }
 
     default:

@@ -6,6 +6,8 @@
       "invalidNumber": "El argumento debe ser un numero. Recibido: {{value}}",
       "invalidBoolean": "El argumento debe ser un valor booleano. Recibido: {{value}}",
       "invalidUser": "No se pudo resolver un usuario desde {{value}}",
+      "invalidChannel": "No se pudo resolver un canal desde {{value}}",
+      "invalidRole": "No se pudo resolver un rol desde {{value}}",
       "tooMany": "Se detectaron demasiados argumentos ({{count}}): {{extras}}. Uso: {{usage}}"
     },
     "permissions": {

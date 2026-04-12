@@ -51,9 +51,63 @@ interface PresenceCustomIds {
   intervalInput: string;
 }
 
-let dynamicPresenceRefreshTimer: NodeJS.Timeout | null = null;
-let presenceRotationTimer: NodeJS.Timeout | null = null;
-let activePresenceTextIndex = 0;
+interface PresencePanelSession {
+  collector: ReturnType<Message["createMessageComponentCollector"]>;
+  disable: () => Promise<void>;
+}
+
+interface PresenceRuntimeState {
+  dynamicPresenceRefreshTimer: NodeJS.Timeout | null;
+  presenceRotationTimer: NodeJS.Timeout | null;
+  activePresenceTextIndex: number;
+  activePanelsByUserId: Map<string, PresencePanelSession>;
+}
+
+const presenceRuntimeByBotId = new Map<string, PresenceRuntimeState>();
+
+const createPresenceRuntimeState = (): PresenceRuntimeState => ({
+  dynamicPresenceRefreshTimer: null,
+  presenceRotationTimer: null,
+  activePresenceTextIndex: 0,
+  activePanelsByUserId: new Map<string, PresencePanelSession>(),
+});
+
+const clearRuntimeTimers = (runtimeState: PresenceRuntimeState): void => {
+  if (runtimeState.dynamicPresenceRefreshTimer) {
+    clearInterval(runtimeState.dynamicPresenceRefreshTimer);
+    runtimeState.dynamicPresenceRefreshTimer = null;
+  }
+
+  if (runtimeState.presenceRotationTimer) {
+    clearInterval(runtimeState.presenceRotationTimer);
+    runtimeState.presenceRotationTimer = null;
+  }
+};
+
+const resolveRuntimeState = (client: Client): PresenceRuntimeState => {
+  const botId = resolveBotId(client) ?? "unbound";
+  const existing = presenceRuntimeByBotId.get(botId);
+  if (existing) {
+    return existing;
+  }
+
+  const next = createPresenceRuntimeState();
+  presenceRuntimeByBotId.set(botId, next);
+  return next;
+};
+
+export const shutdownPresenceRuntime = (): void => {
+  for (const runtimeState of presenceRuntimeByBotId.values()) {
+    clearRuntimeTimers(runtimeState);
+
+    for (const panelSession of runtimeState.activePanelsByUserId.values()) {
+      panelSession.collector.stop("shutdown");
+    }
+    runtimeState.activePanelsByUserId.clear();
+  }
+
+  presenceRuntimeByBotId.clear();
+};
 
 const DISCORD_ACTIVITY_TYPES: Record<PresenceActivityTypeValue, ActivityType> = {
   PLAYING: ActivityType.Playing,
@@ -71,64 +125,55 @@ const resolveDiscordStatus = (status: PresenceStatusValue): DiscordPresenceStatu
 
 const resolveBotId = (client: Client): string | null => client.user?.id ?? null;
 
-const normalizePresenceActivityState = (state: PresenceState): void => {
+const normalizePresenceActivityState = (state: PresenceState, runtimeState: PresenceRuntimeState): void => {
   const activityTexts = sanitizeActivityTexts(state.activity.texts);
   state.activity.texts = activityTexts;
   state.activity.text = activityTexts[0] ?? sanitizeActivityText(state.activity.text);
   state.activity.rotationIntervalSeconds = sanitizePresenceRotationIntervalSeconds(state.activity.rotationIntervalSeconds);
 
-  if (activePresenceTextIndex >= activityTexts.length) {
-    activePresenceTextIndex = 0;
+  if (runtimeState.activePresenceTextIndex >= activityTexts.length) {
+    runtimeState.activePresenceTextIndex = 0;
   }
 };
 
-const getActivePresenceTemplateText = (state: PresenceState): string => {
-  normalizePresenceActivityState(state);
-  return state.activity.texts[activePresenceTextIndex] ?? state.activity.text;
+const getActivePresenceTemplateText = (state: PresenceState, runtimeState: PresenceRuntimeState): string => {
+  normalizePresenceActivityState(state, runtimeState);
+  return state.activity.texts[runtimeState.activePresenceTextIndex] ?? state.activity.text;
 };
 
-const hasTemplateVariablesInPresenceState = (state: PresenceState): boolean => {
-  normalizePresenceActivityState(state);
+const hasTemplateVariablesInPresenceState = (state: PresenceState, runtimeState: PresenceRuntimeState): boolean => {
+  normalizePresenceActivityState(state, runtimeState);
   return state.activity.texts.some((templateText) => containsPresenceTemplateVariables(templateText));
 };
 
-const syncDynamicPresenceTimers = (client: Client, state: PresenceState): void => {
-  normalizePresenceActivityState(state);
-
-  if (dynamicPresenceRefreshTimer) {
-    clearInterval(dynamicPresenceRefreshTimer);
-    dynamicPresenceRefreshTimer = null;
-  }
-
-  if (presenceRotationTimer) {
-    clearInterval(presenceRotationTimer);
-    presenceRotationTimer = null;
-  }
+const syncDynamicPresenceTimers = (client: Client, state: PresenceState, runtimeState: PresenceRuntimeState): void => {
+  normalizePresenceActivityState(state, runtimeState);
+  clearRuntimeTimers(runtimeState);
 
   if (state.activity.texts.length > 1) {
-    presenceRotationTimer = setInterval(() => {
-      normalizePresenceActivityState(state);
+    runtimeState.presenceRotationTimer = setInterval(() => {
+      normalizePresenceActivityState(state, runtimeState);
       if (state.activity.texts.length <= 1) {
-        activePresenceTextIndex = 0;
+        runtimeState.activePresenceTextIndex = 0;
         return;
       }
 
-      activePresenceTextIndex = (activePresenceTextIndex + 1) % state.activity.texts.length;
-      applyPresenceState(client, state);
+      runtimeState.activePresenceTextIndex = (runtimeState.activePresenceTextIndex + 1) % state.activity.texts.length;
+      applyPresenceState(client, state, runtimeState);
     }, state.activity.rotationIntervalSeconds * 1_000);
 
-    presenceRotationTimer.unref?.();
+    runtimeState.presenceRotationTimer.unref?.();
   }
 
-  if (!hasTemplateVariablesInPresenceState(state)) {
+  if (!hasTemplateVariablesInPresenceState(state, runtimeState)) {
     return;
   }
 
-  dynamicPresenceRefreshTimer = setInterval(() => {
-    applyPresenceState(client, state);
+  runtimeState.dynamicPresenceRefreshTimer = setInterval(() => {
+    applyPresenceState(client, state, runtimeState);
   }, PRESENCE_TEMPLATE_REFRESH_INTERVAL_MS);
 
-  dynamicPresenceRefreshTimer.unref?.();
+  runtimeState.dynamicPresenceRefreshTimer.unref?.();
 };
 
 const loadPresenceState = async (client: Client): Promise<PresenceState> => {
@@ -149,15 +194,15 @@ const savePresenceState = async (client: Client, state: PresenceState): Promise<
   await getPresenceStore().upsertByBotId(botId, state);
 };
 
-const applyPresenceState = (client: Client, state: PresenceState): void => {
+const applyPresenceState = (client: Client, state: PresenceState, runtimeState: PresenceRuntimeState): void => {
   if (!client.user) {
     return;
   }
 
-  normalizePresenceActivityState(state);
+  normalizePresenceActivityState(state, runtimeState);
 
   const status = resolveDiscordStatus(state.status);
-  const templateText = getActivePresenceTemplateText(state);
+  const templateText = getActivePresenceTemplateText(state, runtimeState);
   const text = renderPresenceTemplate(client, templateText);
   if (state.status === "streaming" || state.activity.type === "STREAMING") {
     client.user.setPresence({
@@ -218,13 +263,17 @@ const statusLabel = (ctx: CommandExecutionContext, status: PresenceStatusValue):
 const activityLabel = (ctx: CommandExecutionContext, activityType: PresenceActivityTypeValue): string =>
   ctx.ct(`ui.activity.options.${activityType}.label`);
 
-const panelContent = (ctx: CommandExecutionContext, state: PresenceState): string => {
-  normalizePresenceActivityState(state);
+const panelContent = (
+  ctx: CommandExecutionContext,
+  state: PresenceState,
+  runtimeState: PresenceRuntimeState,
+): string => {
+  normalizePresenceActivityState(state, runtimeState);
 
-  const templateText = getActivePresenceTemplateText(state);
+  const templateText = getActivePresenceTemplateText(state, runtimeState);
   const activityPreview = renderPresenceTemplate(ctx.client, templateText);
   const activityTexts = state.activity.texts.map((text, index) => `${index + 1}. ${text}`).join(" | ");
-  const currentIndex = Math.min(activePresenceTextIndex + 1, state.activity.texts.length);
+  const currentIndex = Math.min(runtimeState.activePresenceTextIndex + 1, state.activity.texts.length);
 
   const summary = ctx.ct("responses.panel", {
     status: statusLabel(ctx, state.status),
@@ -246,6 +295,7 @@ const buildContainer = (
   ctx: CommandExecutionContext,
   state: PresenceState,
   customIds: PresenceCustomIds,
+  runtimeState: PresenceRuntimeState,
   disabled = false,
 ): ContainerBuilder => {
   const statusSelect = new StringSelectMenuBuilder()
@@ -293,7 +343,7 @@ const buildContainer = (
   const container = new ContainerBuilder();
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(panelContent(ctx, state)),
+    new TextDisplayBuilder().setContent(panelContent(ctx, state, runtimeState)),
   );
 
   container.addActionRowComponents(
@@ -335,17 +385,22 @@ const resolveReplyMessage = (value: unknown): Message | null => {
   return isMessageResult(message) ? message : null;
 };
 
-const persistAndApplyPresence = async (ctx: CommandExecutionContext, state: PresenceState): Promise<void> => {
-  applyPresenceState(ctx.client, state);
-  syncDynamicPresenceTimers(ctx.client, state);
+const persistAndApplyPresence = async (
+  ctx: CommandExecutionContext,
+  state: PresenceState,
+  runtimeState: PresenceRuntimeState,
+): Promise<void> => {
+  applyPresenceState(ctx.client, state, runtimeState);
+  syncDynamicPresenceTimers(ctx.client, state, runtimeState);
   await savePresenceState(ctx.client, state);
 };
 
 export const restorePresenceFromStorage = async (client: Client): Promise<void> => {
   const state = await loadPresenceState(client);
-  activePresenceTextIndex = 0;
-  applyPresenceState(client, state);
-  syncDynamicPresenceTimers(client, state);
+  const runtimeState = resolveRuntimeState(client);
+  runtimeState.activePresenceTextIndex = 0;
+  applyPresenceState(client, state, runtimeState);
+  syncDynamicPresenceTimers(client, state, runtimeState);
 };
 
 export const presenceCommand = defineCommand({
@@ -360,15 +415,16 @@ export const presenceCommand = defineCommand({
     },
   ],
   execute: async (ctx) => {
+    const runtimeState = resolveRuntimeState(ctx.client);
     const state = await loadPresenceState(ctx.client);
-    applyPresenceState(ctx.client, state);
-    syncDynamicPresenceTimers(ctx.client, state);
+    applyPresenceState(ctx.client, state, runtimeState);
+    syncDynamicPresenceTimers(ctx.client, state, runtimeState);
 
     const customIds = createCustomIds();
 
     const replyResult = await ctx.reply({
       flags: MessageFlags.IsComponentsV2,
-      components: [buildContainer(ctx, state, customIds)],
+      components: [buildContainer(ctx, state, customIds, runtimeState)],
       withResponse: true,
     });
 
@@ -378,13 +434,30 @@ export const presenceCommand = defineCommand({
     }
 
     const ownerId = ctx.user.id;
+    const existingPanel = runtimeState.activePanelsByUserId.get(ownerId);
+    if (existingPanel) {
+      existingPanel.collector.stop("replaced");
+      await existingPanel.disable().catch(() => undefined);
+      runtimeState.activePanelsByUserId.delete(ownerId);
+    }
+
+    const disablePanel = async (): Promise<void> => {
+      await replyMessage
+        .edit({
+          flags: MessageFlags.IsComponentsV2,
+          components: [buildContainer(ctx, state, customIds, runtimeState, true)],
+        })
+        .catch(() => undefined);
+    };
+
     const collector = replyMessage.createMessageComponentCollector({ time: 15 * 60_000 });
+    runtimeState.activePanelsByUserId.set(ownerId, { collector, disable: disablePanel });
 
     collector.on("collect", async (interaction) => {
       if (interaction.user.id !== ownerId) {
         await interaction.reply({
           content: ctx.ct("responses.notOwner"),
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
         return;
       }
@@ -394,15 +467,15 @@ export const presenceCommand = defineCommand({
           if (interaction.customId === customIds.statusSelect) {
             const nextStatus = interaction.values[0];
             if (!nextStatus || !isPresenceStatusValue(nextStatus)) {
-              await interaction.reply({ content: ctx.ct("responses.invalidSelection"), ephemeral: true });
+              await interaction.reply({ content: ctx.ct("responses.invalidSelection"), flags: [MessageFlags.Ephemeral] });
               return;
             }
 
             state.status = nextStatus;
-            await persistAndApplyPresence(ctx, state);
+            await persistAndApplyPresence(ctx, state, runtimeState);
             await interaction.update({
               flags: MessageFlags.IsComponentsV2,
-              components: [buildContainer(ctx, state, customIds)],
+              components: [buildContainer(ctx, state, customIds, runtimeState)],
             });
             return;
           }
@@ -410,26 +483,26 @@ export const presenceCommand = defineCommand({
           if (interaction.customId === customIds.activitySelect) {
             const nextType = interaction.values[0];
             if (!nextType || !isPresenceActivityTypeValue(nextType)) {
-              await interaction.reply({ content: ctx.ct("responses.invalidSelection"), ephemeral: true });
+              await interaction.reply({ content: ctx.ct("responses.invalidSelection"), flags: [MessageFlags.Ephemeral] });
               return;
             }
 
             state.activity.type = nextType;
-            await persistAndApplyPresence(ctx, state);
+            await persistAndApplyPresence(ctx, state, runtimeState);
             await interaction.update({
               flags: MessageFlags.IsComponentsV2,
-              components: [buildContainer(ctx, state, customIds)],
+              components: [buildContainer(ctx, state, customIds, runtimeState)],
             });
             return;
           }
 
-          await interaction.reply({ content: ctx.ct("responses.invalidSelection"), ephemeral: true });
+          await interaction.reply({ content: ctx.ct("responses.invalidSelection"), flags: [MessageFlags.Ephemeral] });
           return;
         }
 
         if (interaction.isButton()) {
           if (interaction.customId === customIds.textButton) {
-            normalizePresenceActivityState(state);
+            normalizePresenceActivityState(state, runtimeState);
 
             const modal = new ModalBuilder()
               .setCustomId(customIds.textModal)
@@ -463,19 +536,19 @@ export const presenceCommand = defineCommand({
 
               state.activity.texts = nextTexts;
               state.activity.text = nextTexts[0] ?? state.activity.text;
-              activePresenceTextIndex = 0;
-              await persistAndApplyPresence(ctx, state);
+              runtimeState.activePresenceTextIndex = 0;
+              await persistAndApplyPresence(ctx, state, runtimeState);
 
               await submitted.deferUpdate();
 
               await replyMessage.edit({
                 flags: MessageFlags.IsComponentsV2,
-                components: [buildContainer(ctx, state, customIds)],
+                components: [buildContainer(ctx, state, customIds, runtimeState)],
               });
             } catch {
               await interaction.followUp({
                 content: ctx.ct("responses.modalTimeout"),
-                ephemeral: true,
+                flags: [MessageFlags.Ephemeral],
               }).catch(() => undefined);
             }
 
@@ -483,7 +556,7 @@ export const presenceCommand = defineCommand({
           }
 
           if (interaction.customId === customIds.intervalButton) {
-            normalizePresenceActivityState(state);
+            normalizePresenceActivityState(state, runtimeState);
 
             const modal = new ModalBuilder()
               .setCustomId(customIds.intervalModal)
@@ -518,7 +591,7 @@ export const presenceCommand = defineCommand({
                     minSeconds: MIN_ACTIVITY_ROTATION_INTERVAL_SECONDS,
                     maxSeconds: MAX_ACTIVITY_ROTATION_INTERVAL_SECONDS,
                   }),
-                  ephemeral: true,
+                  flags: [MessageFlags.Ephemeral],
                 });
                 return;
               }
@@ -530,55 +603,55 @@ export const presenceCommand = defineCommand({
                     minSeconds: MIN_ACTIVITY_ROTATION_INTERVAL_SECONDS,
                     maxSeconds: MAX_ACTIVITY_ROTATION_INTERVAL_SECONDS,
                   }),
-                  ephemeral: true,
+                  flags: [MessageFlags.Ephemeral],
                 });
                 return;
               }
 
               state.activity.rotationIntervalSeconds = nextSeconds;
-              await persistAndApplyPresence(ctx, state);
+              await persistAndApplyPresence(ctx, state, runtimeState);
 
               await submitted.deferUpdate();
 
               await replyMessage.edit({
                 flags: MessageFlags.IsComponentsV2,
-                components: [buildContainer(ctx, state, customIds)],
+                components: [buildContainer(ctx, state, customIds, runtimeState)],
               });
             } catch {
               await interaction.followUp({
                 content: ctx.ct("responses.modalTimeout"),
-                ephemeral: true,
+                flags: [MessageFlags.Ephemeral],
               }).catch(() => undefined);
             }
 
             return;
           }
 
-          await interaction.reply({ content: ctx.ct("responses.invalidSelection"), ephemeral: true });
+          await interaction.reply({ content: ctx.ct("responses.invalidSelection"), flags: [MessageFlags.Ephemeral] });
           return;
         }
 
-        await interaction.reply({ content: ctx.ct("responses.invalidSelection"), ephemeral: true });
+        await interaction.reply({ content: ctx.ct("responses.invalidSelection"), flags: [MessageFlags.Ephemeral] });
       } catch (error) {
         console.error("[command:presence] interaction failed", error);
         const fallback = ctx.t("errors.execution");
 
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ content: fallback, ephemeral: true }).catch(() => undefined);
+          await interaction.reply({ content: fallback, flags: [MessageFlags.Ephemeral] }).catch(() => undefined);
           return;
         }
 
-        await interaction.followUp({ content: fallback, ephemeral: true }).catch(() => undefined);
+        await interaction.followUp({ content: fallback, flags: [MessageFlags.Ephemeral] }).catch(() => undefined);
       }
     });
 
     collector.on("end", async () => {
-      await replyMessage
-        .edit({
-          flags: MessageFlags.IsComponentsV2,
-          components: [buildContainer(ctx, state, customIds, true)],
-        })
-        .catch(() => undefined);
+      const currentPanel = runtimeState.activePanelsByUserId.get(ownerId);
+      if (currentPanel?.collector === collector) {
+        runtimeState.activePanelsByUserId.delete(ownerId);
+      }
+
+      await disablePanel();
     });
   },
 });

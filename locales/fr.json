@@ -6,6 +6,8 @@
       "invalidNumber": "L argument doit etre un nombre. Recu: {{value}}",
       "invalidBoolean": "L argument doit etre un booleen. Recu: {{value}}",
       "invalidUser": "Impossible de trouver un utilisateur depuis {{value}}",
+      "invalidChannel": "Impossible de trouver un salon depuis {{value}}",
+      "invalidRole": "Impossible de trouver un role depuis {{value}}",
       "tooMany": "Trop d arguments ({{count}}) detectes: {{extras}}. Usage: {{usage}}"
     },
     "permissions": {

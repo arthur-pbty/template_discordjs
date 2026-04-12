@@ -10,41 +10,81 @@ import type { ReplyPayload } from "../types/command.js";
 const PREFIX_EPHEMERAL_DELETE_DELAY_MS = 10_000;
 
 const PREFIX_ALLOWED_MENTIONS_DEFAULT: NonNullable<MessageReplyOptions["allowedMentions"]> = {
+  parse: [],
   repliedUser: false,
 };
 
-const SLASH_ALLOWED_MENTIONS_DEFAULT: NonNullable<InteractionReplyOptions["allowedMentions"]> = {};
+const SLASH_ALLOWED_MENTIONS_DEFAULT: NonNullable<InteractionReplyOptions["allowedMentions"]> = {
+  parse: [],
+};
 
 type PrefixReplyObject = Exclude<ReplyPayload, string>;
 
 const EPHEMERAL_FLAG = 64n;
+const FLAG_NAME_TO_BITS: Record<string, bigint> = {
+  Ephemeral: 64n,
+  SuppressEmbeds: 4n,
+  SuppressNotifications: 4096n,
+  IsComponentsV2: 32768n,
+};
 
 const hasBitfieldLike = (value: unknown): value is { bitfield: bigint | number } => {
   return Boolean(value) && typeof value === "object" && "bitfield" in (value as Record<string, unknown>);
 };
 
-const hasEphemeralInFlags = (flags: unknown): boolean => {
+const toFlagBits = (flags: unknown): bigint | null => {
   if (flags === undefined || flags === null) {
-    return false;
+    return null;
   }
 
   if (typeof flags === "number" || typeof flags === "bigint") {
-    return (BigInt(flags) & EPHEMERAL_FLAG) !== 0n;
+    return BigInt(flags);
   }
 
   if (typeof flags === "string") {
-    return flags === "Ephemeral" || flags === "64";
+    if (/^\d+$/.test(flags)) {
+      return BigInt(flags);
+    }
+
+    return FLAG_NAME_TO_BITS[flags] ?? null;
   }
 
   if (Array.isArray(flags)) {
-    return flags.some((entry) => hasEphemeralInFlags(entry));
+    let merged = 0n;
+    for (const entry of flags) {
+      const bits = toFlagBits(entry);
+      if (bits !== null) {
+        merged |= bits;
+      }
+    }
+
+    return merged;
   }
 
   if (hasBitfieldLike(flags)) {
-    return (BigInt(flags.bitfield) & EPHEMERAL_FLAG) !== 0n;
+    return BigInt(flags.bitfield);
   }
 
-  return false;
+  return null;
+};
+
+const hasEphemeralInFlags = (flags: unknown): boolean => {
+  const bits = toFlagBits(flags);
+  return bits !== null && (bits & EPHEMERAL_FLAG) !== 0n;
+};
+
+const sanitizePrefixFlags = (flags: unknown): MessageReplyOptions["flags"] | undefined => {
+  const bits = toFlagBits(flags);
+  if (bits === null) {
+    return undefined;
+  }
+
+  const sanitizedBits = bits & ~EPHEMERAL_FLAG;
+  if (sanitizedBits === 0n) {
+    return undefined;
+  }
+
+  return Number(sanitizedBits);
 };
 
 const hasEphemeral = (payload: PrefixReplyObject): boolean => {
@@ -80,12 +120,17 @@ const withSlashAllowedMentions = (options: InteractionReplyOptions): Interaction
 
 const toMessageReplyOptions = (payload: Exclude<ReplyPayload, string>): MessageReplyOptions => {
   const rest = { ...(payload as Record<string, unknown>) };
+  const sanitizedFlags = sanitizePrefixFlags((payload as InteractionReplyOptions).flags);
 
   // Drop interaction-only fields so prefix replies stay valid message payloads.
   delete rest.fetchReply;
   delete rest.withResponse;
   delete rest.ephemeral;
   delete rest.flags;
+
+  if (sanitizedFlags !== undefined) {
+    rest.flags = sanitizedFlags;
+  }
 
   return rest as MessageReplyOptions;
 };

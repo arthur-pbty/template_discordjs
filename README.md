@@ -36,10 +36,19 @@ Professional command framework template for Discord.js `14.26.2` with:
    npm run deploy:commands
 6. Start in development:
    npm run dev
+7. Validate code quality:
+   - npm run typecheck
+   - npm run test
+   - npm run check
 
 ## Docker Deployment (Bot + PostgreSQL)
 
-1. Configure `.env` (at minimum `DISCORD_TOKEN`, `DISCORD_CLIENT_ID`).
+1. Configure `.env` with at least:
+   - `DISCORD_TOKEN`
+   - `DISCORD_CLIENT_ID`
+   - `POSTGRES_DB`
+   - `POSTGRES_USER`
+   - `POSTGRES_PASSWORD`
 2. Start stack:
    docker compose up -d --build
 3. Stop stack:
@@ -51,6 +60,10 @@ By default, `docker-compose.yml` provisions:
 
 The bot container uses:
 - `DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>`
+
+Security defaults:
+- PostgreSQL is bound to `127.0.0.1` by default in Compose.
+- Keep strong values for `POSTGRES_PASSWORD` and rotate credentials if exposed.
 
 ## Multi-Bot With One DB
 

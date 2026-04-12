@@ -8,7 +8,6 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY src ./src
 COPY locales ./locales
-COPY data ./data
 
 RUN npm run build
 
@@ -22,6 +21,5 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY locales ./locales
-COPY data ./data
 
 CMD ["node", "dist/index.js"]

@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
 
 import { commandList } from "./commands/index.js";
-import { restorePresenceFromStorage } from "./commands/utility/presence.js";
+import { restorePresenceFromStorage, shutdownPresenceRuntime } from "./commands/utility/presence.js";
 import { deployApplicationCommands } from "./framework/commands/deploy.js";
 import { CommandRegistry } from "./framework/commands/registry.js";
 import { env } from "./framework/config/env.js";
@@ -14,6 +14,7 @@ import { initPresenceStore, shutdownPresenceStore } from "./framework/presence/p
 const bindGracefulShutdown = (): void => {
   const shutdown = async (signal: string): Promise<void> => {
     console.log(`[shutdown] ${signal}`);
+    shutdownPresenceRuntime();
     await shutdownPresenceStore().catch((error) => {
       console.error("[shutdown] presence store close failed", error);
     });
@@ -32,6 +33,14 @@ const bindGracefulShutdown = (): void => {
 const bootstrap = async (): Promise<void> => {
   await initPresenceStore();
   bindGracefulShutdown();
+
+  process.on("unhandledRejection", (reason) => {
+    console.error("[process] unhandled rejection", reason);
+  });
+
+  process.on("uncaughtException", (error) => {
+    console.error("[process] uncaught exception", error);
+  });
 
   const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -57,14 +66,20 @@ const bootstrap = async (): Promise<void> => {
     defaultLang: env.DEFAULT_LANG,
   });
 
-  client.on(Events.MessageCreate, onPrefixMessage);
+  client.on(Events.MessageCreate, (message) => {
+    void onPrefixMessage(message).catch((error) => {
+      console.error("[event:messageCreate] handler failed", error);
+    });
+  });
 
-  client.on(Events.InteractionCreate, async (interaction) => {
+  client.on(Events.InteractionCreate, (interaction) => {
     if (!interaction.isChatInputCommand()) {
       return;
     }
 
-    await onSlashInteraction(interaction);
+    void onSlashInteraction(interaction).catch((error) => {
+      console.error("[event:interactionCreate] handler failed", error);
+    });
   });
 
   client.once(Events.ClientReady, async () => {
@@ -96,6 +111,7 @@ const bootstrap = async (): Promise<void> => {
 
 bootstrap().catch(async (error) => {
   console.error("[boot] fatal error", error);
+  shutdownPresenceRuntime();
   await shutdownPresenceStore().catch((closeError) => {
     console.error("[boot] failed to close presence store", closeError);
   });

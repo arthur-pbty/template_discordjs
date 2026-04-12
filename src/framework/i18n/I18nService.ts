@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { SUPPORTED_LANGS, type SupportedLang, type TranslationVars } from "../types/command.js";
 
@@ -15,6 +16,9 @@ const DISCORD_LOCALE_MAP: Record<string, SupportedLang> = {
   "es-es": "es",
   "es-419": "es",
 };
+
+const CURRENT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const LOCALES_DIR = path.resolve(CURRENT_DIR, "../../../locales");
 
 export class I18nService {
   private readonly dictionaries: Record<SupportedLang, JsonObject>;
@@ -96,10 +100,8 @@ export class I18nService {
   }
 
   private loadDictionaries(): Record<SupportedLang, JsonObject> {
-    const localeDir = path.join(process.cwd(), "locales");
-
     return SUPPORTED_LANGS.reduce<Record<SupportedLang, JsonObject>>((acc, lang) => {
-      const filePath = path.join(localeDir, `${lang}.json`);
+      const filePath = path.join(LOCALES_DIR, `${lang}.json`);
       const raw = readFileSync(filePath, "utf-8");
       acc[lang] = JSON.parse(raw) as JsonObject;
       return acc;
