@@ -1,16 +1,16 @@
-export const MEMBER_MESSAGE_KINDS = ["welcome", "goodbye"] as const;
-export type MemberMessageKind = (typeof MEMBER_MESSAGE_KINDS)[number];
+import type {
+  MemberMessageConfig,
+  MemberMessageKind,
+  MemberMessageRenderType,
+} from "../../types/memberMessages.js";
 
-export const MEMBER_MESSAGE_RENDER_TYPES = ["simple", "embed", "container", "image"] as const;
-export type MemberMessageRenderType = (typeof MEMBER_MESSAGE_RENDER_TYPES)[number];
+export type { MemberMessageConfig, MemberMessageKind, MemberMessageRenderType } from "../../types/memberMessages.js";
+
+export const MEMBER_MESSAGE_KINDS: readonly MemberMessageKind[] = ["welcome", "goodbye"];
+
+export const MEMBER_MESSAGE_RENDER_TYPES: readonly MemberMessageRenderType[] = ["simple", "embed", "container", "image"];
 
 export const DEFAULT_MEMBER_MESSAGE_RENDER_TYPE: MemberMessageRenderType = "simple";
-
-export interface MemberMessageConfig {
-  enabled: boolean;
-  channelId: string | null;
-  messageType: MemberMessageRenderType;
-}
 
 export const createDefaultMemberMessageConfig = (): MemberMessageConfig => ({
   enabled: false,

@@ -5,7 +5,7 @@ import {
   type PermissionResolvable,
 } from "discord.js";
 
-import type { BotCommand, CommandExecutionContext } from "../types/command.js";
+import type { BotCommand, CommandExecutionContext } from "../../types/command.js";
 
 const COOLDOWN_SWEEP_INTERVAL_MS = 60_000;
 const COOLDOWN_SWEEP_MIN_ENTRIES = 512;

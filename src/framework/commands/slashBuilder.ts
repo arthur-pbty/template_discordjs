@@ -4,7 +4,7 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
 
-import type { BotCommand, CommandArgument, SupportedLang } from "../types/command.js";
+import type { BotCommand, CommandArgument, SupportedLang } from "../../types/command.js";
 import type { I18nService } from "../../i18n/index.js";
 
 const LANG_TO_DISCORD_LOCALE: Record<SupportedLang, string> = {

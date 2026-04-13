@@ -1,6 +1,12 @@
 import { Pool } from "pg";
 
 import { env } from "../config/env.js";
+import type {
+  PresenceActivityTypeValue,
+  PresenceRow,
+  PresenceState,
+  PresenceStatusValue,
+} from "../../types/presence.js";
 import {
   DEFAULT_ACTIVITY_ROTATION_INTERVAL_SECONDS,
   createDefaultPresenceState,
@@ -9,18 +15,7 @@ import {
   sanitizeActivityText,
   sanitizeActivityTexts,
   sanitizePresenceRotationIntervalSeconds,
-  type PresenceActivityTypeValue,
-  type PresenceState,
-  type PresenceStatusValue,
 } from "./presenceTypes.js";
-
-interface PresenceRow {
-  status: string;
-  activity_type: string;
-  activity_text: string;
-  activity_texts: string | null;
-  rotation_interval_seconds: number | null;
-}
 
 const tableSql = `
 CREATE TABLE IF NOT EXISTS bot_presence_states (

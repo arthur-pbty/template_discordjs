@@ -23,6 +23,15 @@ import {
 } from "discord.js";
 import { defineCommand } from "../framework/commands/defineCommand.js";
 import { env } from "../framework/config/env.js";
+import type {
+  DiscordPresenceStatus,
+  PresenceActivityTypeValue,
+  PresenceCustomIds,
+  PresencePanelSession,
+  PresenceRuntimeState,
+  PresenceState,
+  PresenceStatusValue,
+} from "../types/presence.js";
 import { getPresenceStore } from "../framework/presence/presenceStore.js";
 import {
   PRESENCE_TEMPLATE_REFRESH_INTERVAL_MS,
@@ -42,34 +51,8 @@ import {
   sanitizeActivityText,
   sanitizeActivityTexts,
   sanitizePresenceRotationIntervalSeconds,
-  type PresenceActivityTypeValue,
-  type PresenceState,
-  type PresenceStatusValue,
 } from "../framework/presence/presenceTypes.js";
-import type { CommandExecutionContext } from "../framework/types/command.js";
-
-interface PresenceCustomIds {
-  statusSelect: string;
-  activitySelect: string;
-  textButton: string;
-  intervalButton: string;
-  textModal: string;
-  textInput: string;
-  intervalModal: string;
-  intervalInput: string;
-}
-
-interface PresencePanelSession {
-  collector: ReturnType<Message["createMessageComponentCollector"]>;
-  disable: () => Promise<void>;
-}
-
-interface PresenceRuntimeState {
-  dynamicPresenceRefreshTimer: NodeJS.Timeout | null;
-  presenceRotationTimer: NodeJS.Timeout | null;
-  activePresenceTextIndex: number;
-  activePanelsByUserId: Map<string, PresencePanelSession>;
-}
+import type { CommandExecutionContext } from "../types/command.js";
 
 const presenceRuntimeByBotId = new Map<string, PresenceRuntimeState>();
 
@@ -128,8 +111,6 @@ const DISCORD_ACTIVITY_TYPES: Record<PresenceActivityTypeValue, ActivityType> = 
   COMPETING: ActivityType.Competing,
   CUSTOM: ActivityType.Custom,
 };
-
-type DiscordPresenceStatus = "online" | "idle" | "dnd" | "invisible";
 
 const resolveDiscordStatus = (status: PresenceStatusValue): DiscordPresenceStatus =>
   status === "streaming" ? "online" : status;

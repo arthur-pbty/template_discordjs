@@ -1,19 +1,14 @@
 import type { Message } from "discord.js";
 import type { BotCommand, SupportedLang } from "../types/command.js";
+import type { PrefixHandlerDeps } from "../types/handlers.js";
 
-import { parsePrefixArgs } from "../commands/argParser.js";
-import { buildPrefixUsage } from "../commands/usage.js";
-import { CommandExecutor } from "../execution/CommandExecutor.js";
+import { parsePrefixArgs } from "../framework/commands/argParser.js";
+import { buildPrefixUsage } from "../framework/commands/usage.js";
 import {
   buildCommandExecutionContext,
   createTranslator,
-  type HandlerExecutionDeps,
 } from "./commandExecutionContext.js";
 import { createPrefixReply } from "./replyAdapter.js";
-
-interface PrefixHandlerDeps extends HandlerExecutionDeps {
-  executor: CommandExecutor;
-}
 
 const resolvePrefixLang = (
   deps: PrefixHandlerDeps,

@@ -1,14 +1,6 @@
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
 
-import type { MemberMessageKind } from "./memberMessageTypes.js";
-
-interface MemberMessageImageInput {
-  kind: MemberMessageKind;
-  title: string;
-  subtitle: string;
-  username: string;
-  avatarUrl: string;
-}
+import type { MemberMessageImageInput } from "../../types/memberMessages.js";
 
 const CARD_WIDTH = 1024;
 const CARD_HEIGHT = 320;

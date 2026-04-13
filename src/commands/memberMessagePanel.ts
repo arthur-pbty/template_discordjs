@@ -29,31 +29,18 @@ import { getMemberMessageStore } from "../framework/memberMessages/memberMessage
 import {
   MEMBER_MESSAGE_RENDER_TYPES,
   isMemberMessageRenderTypeValue,
-  type MemberMessageConfig,
-  type MemberMessageKind,
-  type MemberMessageRenderType,
 } from "../framework/memberMessages/memberMessageTypes.js";
-import type { CommandExecutionContext } from "../framework/types/command.js";
+import type { CommandExecutionContext } from "../types/command.js";
+import type {
+  MemberMessageConfig,
+  MemberMessageCustomIds,
+  MemberMessageKind,
+  MemberMessagePanelSession,
+  MemberMessagePanelUiState,
+  MemberMessageRenderType,
+} from "../types/memberMessages.js";
 
 const memberMessageI18n = new I18nService(env.DEFAULT_LANG);
-
-interface MemberMessageCustomIds {
-  toggleButton: string;
-  channelButton: string;
-  channelCancelButton: string;
-  typeSelect: string;
-  channelSelect: string;
-  testButton: string;
-}
-
-interface MemberMessagePanelUiState {
-  channelPickerOpen: boolean;
-}
-
-interface MemberMessagePanelSession {
-  collector: ReturnType<Message["createMessageComponentCollector"]>;
-  disable: () => Promise<void>;
-}
 
 const activePanelsByUser = new Map<string, MemberMessagePanelSession>();
 

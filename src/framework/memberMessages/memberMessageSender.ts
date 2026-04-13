@@ -5,48 +5,27 @@ import {
   MessageFlags,
   PermissionFlagsBits,
   TextDisplayBuilder,
-  type Client,
   type Guild,
   type MessageCreateOptions,
   type User,
 } from "discord.js";
 
 import type { I18nService } from "../../i18n/index.js";
-import type { SupportedLang } from "../types/command.js";
+import type { SupportedLang } from "../../types/command.js";
+import type {
+  DispatchMemberMessageInput,
+  DispatchMemberMessageResult,
+  MemberMessageKind,
+  MemberMessageRenderType,
+  SendableChannel,
+  TemplateSuffix,
+} from "../../types/memberMessages.js";
 import { renderMemberMessageImage } from "./memberMessageImage.js";
 import { getMemberMessageStore } from "./memberMessageStore.js";
-import {
-  type MemberMessageKind,
-  type MemberMessageRenderType,
-} from "./memberMessageTypes.js";
-
-export type DispatchMemberMessageFailureReason =
-  | "bot_not_ready"
-  | "disabled"
-  | "missing_channel"
-  | "channel_not_found"
-  | "channel_not_sendable"
-  | "missing_permissions"
-  | "send_failed";
-
-export interface DispatchMemberMessageResult {
-  sent: boolean;
-  reason: DispatchMemberMessageFailureReason | "sent";
-  channelId: string | null;
-}
-
-interface DispatchMemberMessageInput {
-  client: Client;
-  i18n?: I18nService;
-  guild: Guild;
-  user: User;
-  kind: MemberMessageKind;
-  ignoreEnabled?: boolean;
-}
-
-interface SendableChannel {
-  send: (payload: string | MessageCreateOptions) => Promise<unknown>;
-}
+export type {
+  DispatchMemberMessageFailureReason,
+  DispatchMemberMessageResult,
+} from "../../types/memberMessages.js";
 
 const hasSendMethod = (value: unknown): value is SendableChannel => {
   if (!value || typeof value !== "object") {
@@ -73,15 +52,6 @@ const messageTemplateVars = (guild: Guild, user: User): Record<string, string> =
 const messageColor = (kind: MemberMessageKind): number => {
   return kind === "welcome" ? 0x57f287 : 0xed4245;
 };
-
-type TemplateSuffix =
-  | "simple"
-  | "embedTitle"
-  | "embedDescription"
-  | "containerTitle"
-  | "containerDescription"
-  | "imageTitle"
-  | "imageDescription";
 
 const defaultTemplate = (
   kind: MemberMessageKind,

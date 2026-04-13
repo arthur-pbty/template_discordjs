@@ -16,8 +16,8 @@ import { registerEvents } from "./events/index.js";
 import { CommandRegistry } from "./framework/commands/registry.js";
 import { env } from "./framework/config/env.js";
 import { CommandExecutor } from "./framework/execution/CommandExecutor.js";
-import { createPrefixHandler } from "./framework/handlers/prefixHandler.js";
-import { createSlashHandler } from "./framework/handlers/slashHandler.js";
+import { createPrefixHandler } from "./handlers/prefixHandler.js";
+import { createSlashHandler } from "./handlers/slashHandler.js";
 import { I18nService } from "./i18n/index.js";
 import {
   initMemberMessageStore,

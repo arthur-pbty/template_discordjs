@@ -1,4 +1,4 @@
-import type { BotCommand, BotCommandInput } from "../types/command.js";
+import type { BotCommand, BotCommandInput } from "../../types/command.js";
 
 const assertRequiredArgsBeforeOptional = (input: BotCommandInput): void => {
   const args = input.args ?? [];

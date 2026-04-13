@@ -6,6 +6,7 @@ import type {
 } from "discord.js";
 
 import type { ReplyPayload } from "../types/command.js";
+import type { PrefixReplyObject } from "../types/reply.js";
 
 const PREFIX_EPHEMERAL_DELETE_DELAY_MS = 10_000;
 
@@ -17,8 +18,6 @@ const PREFIX_ALLOWED_MENTIONS_DEFAULT: NonNullable<MessageReplyOptions["allowedM
 const SLASH_ALLOWED_MENTIONS_DEFAULT: NonNullable<InteractionReplyOptions["allowedMentions"]> = {
   parse: [],
 };
-
-type PrefixReplyObject = Exclude<ReplyPayload, string>;
 
 const EPHEMERAL_FLAG = 64n;
 const FLAG_NAME_TO_BITS: Record<string, bigint> = {

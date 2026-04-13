@@ -11,7 +11,7 @@ import { presenceCommand } from "./presence.js";
 import { pingCommand } from "./ping.js";
 import { welcomeCommand } from "./welcome.js";
 
-import type { BotCommand } from "../framework/types/command.js";
+import type { BotCommand } from "../types/command.js";
 
 /** CommandList: tableau ordonné des commandes disponibles. */
 export const commandList: BotCommand[] = [

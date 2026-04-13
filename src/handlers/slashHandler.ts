@@ -1,18 +1,13 @@
 import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
+import type { SlashHandlerDeps } from "../types/handlers.js";
 
-import { parseSlashArgs } from "../commands/argParser.js";
-import { buildSlashUsage } from "../commands/usage.js";
-import { CommandExecutor } from "../execution/CommandExecutor.js";
+import { parseSlashArgs } from "../framework/commands/argParser.js";
+import { buildSlashUsage } from "../framework/commands/usage.js";
 import {
   buildCommandExecutionContext,
   createTranslator,
-  type HandlerExecutionDeps,
 } from "./commandExecutionContext.js";
 import { createSlashReply } from "./replyAdapter.js";
-
-interface SlashHandlerDeps extends HandlerExecutionDeps {
-  executor: CommandExecutor;
-}
 
 export const createSlashHandler = (deps: SlashHandlerDeps) => {
   return async (interaction: ChatInputCommandInteraction): Promise<void> => {

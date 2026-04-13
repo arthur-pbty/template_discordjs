@@ -1,7 +1,4 @@
-export interface TemplateRenderOptions {
-  aliases?: Record<string, string>;
-  keepUnknown?: boolean;
-}
+import type { TemplateRenderOptions } from "../../types/templateVariables.js";
 
 const createTemplateTokenRegex = (): RegExp => /\{\{([a-zA-Z0-9_]+)\}\}/g;
 

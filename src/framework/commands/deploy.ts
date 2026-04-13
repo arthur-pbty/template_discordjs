@@ -1,21 +1,7 @@
 import { REST, Routes } from "discord.js";
 
 import { buildSlashPayload } from "./slashBuilder.js";
-import type { CommandRegistry } from "./registry.js";
-import type { I18nService } from "../../i18n/index.js";
-
-export interface DeployCommandsOptions {
-  token: string;
-  clientId: string;
-  guildId?: string;
-  registry: CommandRegistry;
-  i18n: I18nService;
-}
-
-export interface DeployCommandsResult {
-  scope: "guild" | "global";
-  count: number;
-}
+import type { DeployCommandsOptions, DeployCommandsResult } from "../../types/deploy.js";
 
 export const deployApplicationCommands = async (options: DeployCommandsOptions): Promise<DeployCommandsResult> => {
   const body = buildSlashPayload(options.registry.getAll(), options.i18n);

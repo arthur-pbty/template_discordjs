@@ -2,9 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SUPPORTED_LANGS, type SupportedLang, type TranslationVars } from "../framework/types/command.js";
-
-type JsonObject = Record<string, unknown>;
+import { SUPPORTED_LANGS, type SupportedLang, type TranslationVars } from "../types/command.js";
+import type { JsonObject } from "../types/i18n.js";
 
 const DISCORD_LOCALE_MAP: Record<string, SupportedLang> = {
 	en: "en",

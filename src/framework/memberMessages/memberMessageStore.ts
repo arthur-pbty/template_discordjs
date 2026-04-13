@@ -1,18 +1,15 @@
 import { Pool } from "pg";
 
 import { env } from "../config/env.js";
+import type {
+  MemberMessageConfig,
+  MemberMessageKind,
+  MemberMessageRow,
+} from "../../types/memberMessages.js";
 import {
   createDefaultMemberMessageConfig,
   isMemberMessageRenderTypeValue,
-  type MemberMessageConfig,
-  type MemberMessageKind,
 } from "./memberMessageTypes.js";
-
-interface MemberMessageRow {
-  enabled: boolean;
-  channel_id: string | null;
-  message_type: string;
-}
 
 const tableSql = `
 CREATE TABLE IF NOT EXISTS bot_member_message_configs (

@@ -1,4 +1,4 @@
-import type { BotCommand, CommandI18nTools, SupportedLang } from "../types/command.js";
+import type { BotCommand, CommandI18nTools, SupportedLang } from "../../types/command.js";
 
 const formatArgToken = (name: string, required: boolean): string => required ? `<${name}>` : `[${name}]`;
 

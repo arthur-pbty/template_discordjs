@@ -1,32 +1,10 @@
-import type { CommandRegistry } from "../commands/registry.js";
-import type { I18nService } from "../../i18n/index.js";
 import type {
-  BotCommand,
   CommandExecutionContext,
-  CommandSource,
   SupportedLang,
   TranslationVars,
 } from "../types/command.js";
-
-export interface HandlerExecutionDeps {
-  registry: CommandRegistry;
-  i18n: I18nService;
-  prefix: string;
-  defaultLang: SupportedLang;
-}
-
-interface BuildExecutionContextInput {
-  command: BotCommand;
-  source: CommandSource;
-  lang: SupportedLang;
-  args: CommandExecutionContext["args"];
-  client: CommandExecutionContext["client"];
-  user: CommandExecutionContext["user"];
-  guild: CommandExecutionContext["guild"];
-  channel: CommandExecutionContext["channel"];
-  raw: CommandExecutionContext["raw"];
-  reply: CommandExecutionContext["reply"];
-}
+import type { BuildExecutionContextInput, HandlerExecutionDeps } from "../types/handlers.js";
+import type { I18nService } from "../i18n/index.js";
 
 export const createTranslator = (
   i18n: I18nService,

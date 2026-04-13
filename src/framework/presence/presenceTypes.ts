@@ -1,31 +1,24 @@
-export const PRESENCE_STATUSES = ["online", "idle", "dnd", "invisible", "streaming"] as const;
-export const PRESENCE_ACTIVITY_TYPES = [
+import type {
+  PresenceActivityTypeValue,
+  PresenceState,
+  PresenceStatusValue,
+} from "../../types/presence.js";
+
+export const PRESENCE_STATUSES: readonly PresenceStatusValue[] = ["online", "idle", "dnd", "invisible", "streaming"];
+export const PRESENCE_ACTIVITY_TYPES: readonly PresenceActivityTypeValue[] = [
   "PLAYING",
   "STREAMING",
   "WATCHING",
   "LISTENING",
   "COMPETING",
   "CUSTOM",
-] as const;
-
-export type PresenceStatusValue = (typeof PRESENCE_STATUSES)[number];
-export type PresenceActivityTypeValue = (typeof PRESENCE_ACTIVITY_TYPES)[number];
+];
 
 export const DEFAULT_ACTIVITY_TEXT = "Ready to help";
 export const DEFAULT_ACTIVITY_ROTATION_INTERVAL_SECONDS = 30;
 export const MIN_ACTIVITY_ROTATION_INTERVAL_SECONDS = 5;
 export const MAX_ACTIVITY_ROTATION_INTERVAL_SECONDS = 3_600;
 export const MAX_ACTIVITY_ROTATION_TEXTS = 10;
-
-export interface PresenceState {
-  status: PresenceStatusValue;
-  activity: {
-    type: PresenceActivityTypeValue;
-    text: string;
-    texts: string[];
-    rotationIntervalSeconds: number;
-  };
-}
 
 export const createDefaultPresenceState = (): PresenceState => ({
   status: "online",
@@ -38,10 +31,10 @@ export const createDefaultPresenceState = (): PresenceState => ({
 });
 
 export const isPresenceStatusValue = (value: string): value is PresenceStatusValue =>
-  (PRESENCE_STATUSES as readonly string[]).includes(value);
+  PRESENCE_STATUSES.includes(value as PresenceStatusValue);
 
 export const isPresenceActivityTypeValue = (value: string): value is PresenceActivityTypeValue =>
-  (PRESENCE_ACTIVITY_TYPES as readonly string[]).includes(value);
+  PRESENCE_ACTIVITY_TYPES.includes(value as PresenceActivityTypeValue);
 
 export const sanitizeActivityText = (value: string): string => {
   const trimmed = value.trim();

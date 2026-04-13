@@ -1,16 +1,7 @@
 import type { ChatInputCommandInteraction, GuildBasedChannel, Message } from "discord.js";
 
-import type { CommandArgValue, CommandArgument, TranslationVars } from "../types/command.js";
-
-export interface ArgumentParseError {
-  key: string;
-  vars?: TranslationVars;
-}
-
-export interface ParsedArgumentsResult {
-  values: Record<string, CommandArgValue>;
-  errors: ArgumentParseError[];
-}
+import type { ArgumentParseError, ParsedArgumentsResult } from "../../types/argParser.js";
+import type { CommandArgValue, CommandArgument } from "../../types/command.js";
 
 const USER_MENTION_PATTERN = /^<@!?(\d{16,22})>$/;
 const CHANNEL_MENTION_PATTERN = /^<#(\d{16,22})>$/;
