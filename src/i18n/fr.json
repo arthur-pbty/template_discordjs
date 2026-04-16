@@ -139,6 +139,51 @@
         }
       }
     },
+    "logs": {
+      "name": "logs",
+      "description": "Configurer les logs d events Discord avec un panneau interactif.",
+      "examples": {
+        "slash": "Ouvrir le panneau interactif des logs"
+      },
+      "responses": {
+        "slashOnly": "Utilise /logs pour ouvrir ce panneau interactif.",
+        "guildOnly": "Cette commande doit etre utilisee dans un serveur.",
+        "notOwner": "Seul l auteur de la commande peut utiliser ce panneau.",
+        "invalidSelection": "Selection invalide.",
+        "allEnabled": "Tous les logs d events sont actives.",
+        "allDisabled": "Tous les logs d events sont desactives.",
+        "eventEnabled": "Event {{event}} active.",
+        "eventDisabled": "Event {{event}} desactive.",
+        "channelsCreated": "Salons de logs prets. Crees: {{created}}, reutilises: {{reused}}.",
+        "channelsPartial": "Salons de logs partiellement prets. Crees: {{created}}, reutilises: {{reused}}, categories en echec: {{failed}}.",
+        "channelsFailed": "Impossible de creer les salons de logs. Categories en echec: {{failed}}."
+      },
+      "ui": {
+        "embed": {
+          "title": "Configuration des logs",
+          "description": "Active ou desactive chaque event Discord et route les logs par salons de categorie."
+        },
+        "status": {
+          "enabled": "Active",
+          "disabled": "Desactive"
+        },
+        "pageLabel": "Page {{page}}/{{pageCount}}",
+        "enabledCountLabel": "Events actives: {{enabledCount}}/{{totalCount}}",
+        "eventsHeader": "Events",
+        "channelLabel": "Salon",
+        "channelNotConfigured": "#non-configure",
+        "feedbackLabel": "Derniere action",
+        "buttons": {
+          "enableAll": "✅ Activer tous les logs",
+          "disableAll": "❌ Desactiver tous les logs",
+          "createChannels": "📁 Creer les salons de logs",
+          "previousPage": "Precedent",
+          "nextPage": "Suivant",
+          "enableEvent": "Activer {{event}}",
+          "disableEvent": "Desactiver {{event}}"
+        }
+      }
+    },
     "welcome": {
       "name": "bienvenue",
       "description": "Configurer les messages de bienvenue avec un panneau interactif.",

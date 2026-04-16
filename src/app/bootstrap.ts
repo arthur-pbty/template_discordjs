@@ -25,12 +25,16 @@ import {
   PostgresLeaderCoordinator,
 } from "../core/runtime/leaderCoordinator.js";
 import { PostgresMemberMessageStore } from "../database/stores/memberMessageStore.js";
+import { PostgresLogEventStore } from "../database/stores/logEventStore.js";
 import { PostgresPresenceStore } from "../database/stores/presenceStore.js";
 import { DatabaseLifecycle } from "../database/dbLifecycle.js";
 import { registerEvents } from "../events/index.js";
 import { createPrefixHandler } from "../handlers/prefixHandler.js";
 import { createSlashHandler } from "../handlers/slashHandler.js";
 import { I18nService } from "../i18n/index.js";
+import {
+  LogEventService,
+} from "../modules/logs/index.js";
 import {
   MemberMessageService,
 } from "../modules/memberMessages/index.js";
@@ -111,11 +115,13 @@ export const bootstrap = async (): Promise<void> => {
 
   const presenceStore = new PostgresPresenceStore(pool);
   const memberMessageStore = new PostgresMemberMessageStore(pool);
+  const logEventStore = new PostgresLogEventStore(pool);
 
   const dbLifecycle = new DatabaseLifecycle(
     [
       { name: "presenceStore", init: () => presenceStore.init() },
       { name: "memberMessageStore", init: () => memberMessageStore.init() },
+      { name: "logEventStore", init: () => logEventStore.init() },
     ],
     async () => {
       await pool.end();
@@ -125,6 +131,7 @@ export const bootstrap = async (): Promise<void> => {
   const services: AppFeatureServices = {
     presenceService: new PresenceService(presenceStore, env.PRESENCE_STREAM_URL),
     memberMessageService: new MemberMessageService(memberMessageStore),
+    logEventService: new LogEventService(logEventStore),
   };
 
   const cooldownStore = env.STATE_BACKEND === "redis" && redis
@@ -178,6 +185,10 @@ export const bootstrap = async (): Promise<void> => {
     if (client) {
       client.destroy();
     }
+
+    await services.logEventService.shutdown().catch((error) => {
+      log.error({ err: error }, "logs service shutdown failed");
+    });
 
     await services.presenceService.shutdown().catch((error) => {
       log.error({ err: error }, "presence service shutdown failed");

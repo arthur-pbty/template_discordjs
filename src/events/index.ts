@@ -9,6 +9,7 @@ import { registerGuildDelete } from "./guildDelete.js";
 import { registerGuildMemberAdd } from "./guildMemberAdd.js";
 import { registerGuildMemberRemove } from "./guildMemberRemove.js";
 import { registerInteractionCreate } from "./interactionCreate.js";
+import { registerLogRuntimeEvents } from "./logsRuntime.js";
 import { registerMessageCreate } from "./messageCreate.js";
 import { registerClientReady } from "./ready.js";
 
@@ -25,12 +26,13 @@ export const registerEvents = (
 ): void => {
   registerMessageCreate(client, handlers.onPrefixMessage);
   registerInteractionCreate(client, handlers.onSlashInteraction);
+  registerLogRuntimeEvents(client, services.logEventService);
 
   registerGuildMemberAdd(client, i18n, services.memberMessageService);
   registerGuildMemberRemove(client, i18n, services.memberMessageService);
 
   registerGuildCreate(client);
-  registerGuildDelete(client, services.memberMessageService);
+  registerGuildDelete(client, services.memberMessageService, services.logEventService);
 
   registerClientReady(client, registry, i18n, services.presenceService, leaderCoordinator);
 };

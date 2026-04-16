@@ -139,6 +139,51 @@
         }
       }
     },
+    "logs": {
+      "name": "logs",
+      "description": "Configure Discord event logs with an interactive panel.",
+      "examples": {
+        "slash": "Open the interactive logs panel"
+      },
+      "responses": {
+        "slashOnly": "Use /logs to open this interactive panel.",
+        "guildOnly": "This command can only be used inside a server.",
+        "notOwner": "Only the command author can use this panel.",
+        "invalidSelection": "Invalid selection.",
+        "allEnabled": "All log events are now enabled.",
+        "allDisabled": "All log events are now disabled.",
+        "eventEnabled": "Event {{event}} enabled.",
+        "eventDisabled": "Event {{event}} disabled.",
+        "channelsCreated": "Log channels ready. Created: {{created}}, reused: {{reused}}.",
+        "channelsPartial": "Log channels partially ready. Created: {{created}}, reused: {{reused}}, failed categories: {{failed}}.",
+        "channelsFailed": "Could not create log channels. Failed categories: {{failed}}."
+      },
+      "ui": {
+        "embed": {
+          "title": "Logs Configuration",
+          "description": "Enable or disable each Discord event and route logs by category channels."
+        },
+        "status": {
+          "enabled": "Enabled",
+          "disabled": "Disabled"
+        },
+        "pageLabel": "Page {{page}}/{{pageCount}}",
+        "enabledCountLabel": "Enabled events: {{enabledCount}}/{{totalCount}}",
+        "eventsHeader": "Events",
+        "channelLabel": "Channel",
+        "channelNotConfigured": "#not-configured",
+        "feedbackLabel": "Last action",
+        "buttons": {
+          "enableAll": "✅ Enable all logs",
+          "disableAll": "❌ Disable all logs",
+          "createChannels": "📁 Create log channels",
+          "previousPage": "Previous",
+          "nextPage": "Next",
+          "enableEvent": "Enable {{event}}",
+          "disableEvent": "Disable {{event}}"
+        }
+      }
+    },
     "welcome": {
       "name": "welcome",
       "description": "Configure welcome messages with an interactive panel.",

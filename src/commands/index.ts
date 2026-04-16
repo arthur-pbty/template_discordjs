@@ -7,6 +7,7 @@
 import { helpCommand } from "./help.js";
 import { kissCommand } from "./kiss.js";
 import { createGoodbyeCommand } from "./goodbye.js";
+import { createLogsCommand } from "./logs.js";
 import { createPresenceCommand } from "./presence.js";
 import { pingCommand } from "./ping.js";
 import { createWelcomeCommand } from "./welcome.js";
@@ -22,5 +23,6 @@ export const createCommandList = (services: AppFeatureServices, i18n: I18nServic
   createWelcomeCommand(services.memberMessageService, i18n),
   createGoodbyeCommand(services.memberMessageService, i18n),
   createPresenceCommand(services.presenceService),
+  createLogsCommand(services.logEventService),
   helpCommand,
 ];
