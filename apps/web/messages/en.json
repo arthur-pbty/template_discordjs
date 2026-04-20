@@ -3,6 +3,14 @@
     "title": "Shadow - Discord bot hosting (EUR 2/month per bot)",
     "description": "Multi-tenant SaaS platform to host and manage Discord bots with auto commands, components v2, multi-language support and dynamic variables."
   },
+  "common": {
+    "brand": "Shadow"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "login": "Sign in"
+  },
   "localeSwitcher": {
     "label": "Language",
     "locales": {
@@ -11,7 +19,7 @@
     }
   },
   "hero": {
-    "navLogin": "Sign in",
+    "kicker": "Discord bot hosting platform",
     "title": "Shadow - Host your Discord bots (from EUR 2/month per bot)",
     "description": "Host and manage your bots with auto commands (prefix and slash), components v2, automatic help, multi-language support and dynamic variables.",
     "ctaStart": "Get started - EUR 2/month",
@@ -26,6 +34,8 @@
       "stopped": "Stopped"
     },
     "card": {
+      "title": "Live fleet preview",
+      "subtitle": "Track every bot instance from one operational surface.",
       "instanceMetrics": "Instances: 1 | CPU 35%",
       "manage": "Manage",
       "preview": "Real-time preview of your bot status"
@@ -80,7 +90,9 @@
     }
   },
   "footer": {
-    "tagline": "Discord bot hosting - plans from EUR 2/month per bot"
+    "tagline": "Discord bot hosting - plans from EUR 2/month per bot",
+    "github": "GitHub",
+    "copyright": "Copyright {year} {brand}"
   },
   "login": {
     "eyebrow": "Shadow - Discord bot hosting",
@@ -96,12 +108,18 @@
     "loginCta": "Sign in",
     "tenant": "Tenant {tenantId}",
     "role": "Role: {role}",
+    "roles": {
+      "owner": "Owner",
+      "member": "Member"
+    },
     "logout": "Sign out",
     "addBot": {
       "title": "Add a bot",
       "description": "The token is validated by the API and encrypted before it is stored.",
       "tokenLabel": "Discord bot token",
+      "tokenPlaceholder": "MTIz...",
       "displayNameLabel": "Display name (optional)",
+      "displayNamePlaceholder": "Support bot EU",
       "submit": "Add bot",
       "submitPending": "Validating..."
     },

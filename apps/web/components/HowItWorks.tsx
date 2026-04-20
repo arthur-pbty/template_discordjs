@@ -1,5 +1,8 @@
 import { getT } from "../i18n/server";
 
+import { Badge } from "./ui/Badge";
+import { Card, CardContent } from "./ui/Card";
+
 export default async function HowItWorks() {
   const t = await getT();
 
@@ -19,21 +22,25 @@ export default async function HowItWorks() {
   ];
 
   return (
-    <section>
-      <h2 className="text-2xl font-bold text-white">{t("howItWorks.title")}</h2>
-      <p className="mt-2 text-gray-400 max-w-2xl">{t("howItWorks.subtitle")}</p>
+    <section className="space-y-6">
+      <div className="space-y-3">
+        <h2>{t("howItWorks.title")}</h2>
+        <p className="section-description">{t("howItWorks.subtitle")}</p>
+      </div>
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {steps.map((s, i) => (
-          <div key={i} className="p-6 bg-gray-900/30 rounded-xl border border-white/6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-cyan-500 text-white font-semibold">{i + 1}</div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">{s.title}</h3>
-                <p className="mt-2 text-sm text-gray-300">{s.desc}</p>
+          <Card className="h-full border-[var(--border-muted)]" key={i}>
+            <CardContent className="space-y-3">
+              <Badge className="w-fit" variant="accent">
+                {`${i + 1}`}
+              </Badge>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-[var(--foreground)]">{s.title}</h3>
+                <p className="text-sm text-[var(--foreground-muted)]">{s.desc}</p>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>

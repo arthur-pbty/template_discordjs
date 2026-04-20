@@ -1,18 +1,31 @@
 import { getT } from "../i18n/server";
 
+import { Container } from "./ui/Container";
+
 export default async function Footer() {
   const t = await getT();
 
   return (
-    <footer className="mt-20 border-t border-white/6 bg-gradient-to-t from-black/0 to-black/30">
-      <div className="container mx-auto px-6 py-8 flex items-center justify-between">
-        <div className="text-sm text-gray-400">
-          Copyright {new Date().getFullYear()} Shadow - {t("footer.tagline")}
+    <footer>
+      <Container className="flex flex-wrap items-center justify-between gap-4 py-6">
+        <div className="text-sm text-[var(--foreground-muted)]">
+          {`${t("footer.copyright", {
+            year: new Date().getFullYear(),
+            brand: t("common.brand"),
+          })} - ${t("footer.tagline")}`}
         </div>
-        <div className="text-sm text-gray-400">
-          <a href="https://github.com/" target="_blank" rel="noreferrer" className="hover:text-white transition">GitHub</a>
+
+        <div className="text-sm text-[var(--foreground-muted)]">
+          <a
+            className="transition-colors hover:text-[var(--foreground)]"
+            href="https://github.com/"
+            rel="noreferrer"
+            target="_blank"
+          >
+            {t("footer.github")}
+          </a>
         </div>
-      </div>
+      </Container>
     </footer>
   );
 }

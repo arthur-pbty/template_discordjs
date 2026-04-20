@@ -1,7 +1,12 @@
 "use client";
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
+
 import { useT } from "../i18n/client";
+import { Badge } from "./ui/Badge";
+import { Button, buttonClassName } from "./ui/Button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/Card";
+import { Input } from "./ui/Input";
 
 type User = {
   id: string;
@@ -45,6 +50,17 @@ export function DashboardClient({ apiBaseUrl }: DashboardClientProps) {
     start: t("dashboard.actions.start"),
     stop: t("dashboard.actions.stop"),
     restart: t("dashboard.actions.restart"),
+  };
+
+  const statusBadgeVariant: Record<
+    BotStatus,
+    "neutral" | "warning" | "success" | "danger"
+  > = {
+    stopped: "neutral",
+    starting: "warning",
+    running: "success",
+    stopping: "warning",
+    error: "danger",
   };
 
   const [user, setUser] = useState<User | null>(null);
@@ -166,105 +182,187 @@ export function DashboardClient({ apiBaseUrl }: DashboardClientProps) {
   };
 
   if (loading) {
-    return <p className="muted">{t("dashboard.loading")}</p>;
+    return (
+      <Card className="max-w-xl">
+        <CardContent>
+          <p className="text-sm text-[var(--foreground-muted)]">{t("dashboard.loading")}</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (!user) {
     return (
-      <div className="stack">
-        <p className="eyebrow">{t("dashboard.sessionRequired")}</p>
-        <h1>{t("dashboard.loginRequired")}</h1>
-        <p>{t("dashboard.loginDescription")}</p>
-        <a className="button-primary" href={`${apiBaseUrl}/auth/discord/login`}>
-          {t("dashboard.loginCta")}
-        </a>
-      </div>
+      <Card className="mx-auto max-w-2xl">
+        <CardHeader className="space-y-3">
+          <Badge className="w-fit" variant="warning">
+            {t("dashboard.sessionRequired")}
+          </Badge>
+          <CardTitle>{t("dashboard.loginRequired")}</CardTitle>
+          <CardDescription>{t("dashboard.loginDescription")}</CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <a
+            className={buttonClassName({ size: "lg", variant: "primary" })}
+            href={`${apiBaseUrl}/auth/discord/login`}
+          >
+            {t("dashboard.loginCta")}
+          </a>
+        </CardContent>
+      </Card>
     );
   }
 
+  const userRoleLabel =
+    user.role === "owner"
+      ? t("dashboard.roles.owner")
+      : t("dashboard.roles.member");
+
   return (
-    <div className="stack">
-      <header className="dashboard-header">
-        <div>
-          <p className="eyebrow">{t("dashboard.tenant", { tenantId: user.tenantId })}</p>
-          <h1>{user.username}</h1>
-          <p className="muted">{t("dashboard.role", { role: user.role })}</p>
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-2">
+          <Badge variant="accent">{t("dashboard.tenant", { tenantId: user.tenantId })}</Badge>
+          <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">
+            {user.username}
+          </h1>
+          <p className="text-sm text-[var(--foreground-muted)]">
+            {t("dashboard.role", { role: userRoleLabel })}
+          </p>
         </div>
-        <button className="button-ghost" onClick={handleLogout} type="button">
+        <Button onClick={handleLogout} variant="secondary">
           {t("dashboard.logout")}
-        </button>
+        </Button>
       </header>
 
-      {error ? <p className="error-banner">{error}</p> : null}
+      {error ? (
+        <Card className="border-[color:color-mix(in_srgb,var(--danger)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--danger)_10%,var(--surface))]">
+          <CardContent>
+            <p className="text-sm font-semibold text-[var(--danger)]">{error}</p>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <section className="card-grid">
-        <article className="card add-bot-card">
-          <h2>{t("dashboard.addBot.title")}</h2>
-          <p>{t("dashboard.addBot.description")}</p>
-          <form className="stack-tight" onSubmit={handleAddBot}>
-            <label>
-              {t("dashboard.addBot.tokenLabel")}
-              <input
-                autoComplete="off"
-                name="token"
-                onChange={(event) => setToken(event.target.value)}
-                placeholder="MTIz..."
-                required
-                type="password"
-                value={token}
-              />
-            </label>
-            <label>
-              {t("dashboard.addBot.displayNameLabel")}
-              <input
-                name="displayName"
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="Bot support EU"
-                type="text"
-                value={displayName}
-              />
-            </label>
-            <button className="button-primary" disabled={submitting} type="submit">
-              {submitting ? t("dashboard.addBot.submitPending") : t("dashboard.addBot.submit")}
-            </button>
-          </form>
+      <section className="grid gap-4 xl:grid-cols-[minmax(340px,0.95fr)_minmax(0,1.2fr)]">
+        <article>
+          <Card className="h-full">
+            <CardHeader className="space-y-2">
+              <CardTitle>{t("dashboard.addBot.title")}</CardTitle>
+              <CardDescription>{t("dashboard.addBot.description")}</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <form className="space-y-4" onSubmit={handleAddBot}>
+                <label htmlFor="bot-token">
+                  <span>{t("dashboard.addBot.tokenLabel")}</span>
+                  <Input
+                    autoComplete="off"
+                    id="bot-token"
+                    name="token"
+                    onChange={(event) => setToken(event.target.value)}
+                    placeholder={t("dashboard.addBot.tokenPlaceholder")}
+                    required
+                    type="password"
+                    value={token}
+                  />
+                </label>
+
+                <label htmlFor="bot-display-name">
+                  <span>{t("dashboard.addBot.displayNameLabel")}</span>
+                  <Input
+                    id="bot-display-name"
+                    name="displayName"
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    placeholder={t("dashboard.addBot.displayNamePlaceholder")}
+                    type="text"
+                    value={displayName}
+                  />
+                </label>
+
+                <Button disabled={submitting} fullWidth type="submit" variant="primary">
+                  {submitting
+                    ? t("dashboard.addBot.submitPending")
+                    : t("dashboard.addBot.submit")}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </article>
 
-        <article className="card bots-card">
-          <div className="row-between">
-            <h2>{t("dashboard.bots.title")}</h2>
-            <button className="button-ghost" onClick={() => void refreshData()} type="button">
-              {t("dashboard.bots.refresh")}
-            </button>
-          </div>
+        <article>
+          <Card className="h-full">
+            <CardHeader className="mb-4 flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
+              <CardTitle>{t("dashboard.bots.title")}</CardTitle>
+              <Button onClick={() => void refreshData()} size="sm" variant="secondary">
+                {t("dashboard.bots.refresh")}
+              </Button>
+            </CardHeader>
 
-          {bots.length === 0 ? (
-            <p className="muted">{t("dashboard.bots.empty")}</p>
-          ) : (
-            <ul className="bot-list">
-              {bots.map((bot) => (
-                <li className="bot-item" key={bot.id}>
-                  <div className="bot-main">
-                    <p className="bot-name">{bot.displayName}</p>
-                    <p className="muted mono">{t("dashboard.bots.discordId", { discordBotId: bot.discordBotId })}</p>
-                    <p className={`status status-${bot.status}`}>{statusLabel[bot.status]}</p>
-                    {bot.lastError ? <p className="error-inline">{t("dashboard.bots.lastError", { message: bot.lastError })}</p> : null}
-                  </div>
-                  <div className="actions">
-                    <button onClick={() => void triggerAction(bot.id, "start")} type="button">
-                      {actionLabel.start}
-                    </button>
-                    <button onClick={() => void triggerAction(bot.id, "stop")} type="button">
-                      {actionLabel.stop}
-                    </button>
-                    <button onClick={() => void triggerAction(bot.id, "restart")} type="button">
-                      {actionLabel.restart}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+            <CardContent className="space-y-3">
+              {bots.length === 0 ? (
+                <p className="text-sm text-[var(--foreground-muted)]">
+                  {t("dashboard.bots.empty")}
+                </p>
+              ) : (
+                <ul className="m-0 grid list-none gap-3 p-0">
+                  {bots.map((bot) => (
+                    <li
+                      className="space-y-4 rounded-xl border border-[var(--border-muted)] bg-[var(--surface-subtle)] p-4"
+                      key={bot.id}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="text-base font-semibold text-[var(--foreground)]">
+                            {bot.displayName}
+                          </p>
+                          <p className="mono text-xs text-[var(--foreground-muted)]">
+                            {t("dashboard.bots.discordId", {
+                              discordBotId: bot.discordBotId,
+                            })}
+                          </p>
+                        </div>
+
+                        <Badge variant={statusBadgeVariant[bot.status]}>
+                          {statusLabel[bot.status]}
+                        </Badge>
+                      </div>
+
+                      {bot.lastError ? (
+                        <p className="text-sm font-medium text-[var(--danger)]">
+                          {t("dashboard.bots.lastError", { message: bot.lastError })}
+                        </p>
+                      ) : null}
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={() => void triggerAction(bot.id, "start")}
+                          size="sm"
+                          variant="secondary"
+                        >
+                          {actionLabel.start}
+                        </Button>
+                        <Button
+                          onClick={() => void triggerAction(bot.id, "stop")}
+                          size="sm"
+                          variant="secondary"
+                        >
+                          {actionLabel.stop}
+                        </Button>
+                        <Button
+                          onClick={() => void triggerAction(bot.id, "restart")}
+                          size="sm"
+                          variant="secondary"
+                        >
+                          {actionLabel.restart}
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
         </article>
       </section>
     </div>

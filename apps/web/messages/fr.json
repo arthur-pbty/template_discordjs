@@ -3,6 +3,14 @@
     "title": "Shadow - Hebergement de bots Discord (a partir de 2 EUR/mois par bot)",
     "description": "Plateforme SaaS multi-tenant pour heberger et gerer vos bots Discord avec commandes automatiques, components v2, multi-langue et variables dynamiques."
   },
+  "common": {
+    "brand": "Shadow"
+  },
+  "nav": {
+    "home": "Accueil",
+    "dashboard": "Dashboard",
+    "login": "Se connecter"
+  },
   "localeSwitcher": {
     "label": "Langue",
     "locales": {
@@ -11,7 +19,7 @@
     }
   },
   "hero": {
-    "navLogin": "Se connecter",
+    "kicker": "Plateforme SaaS pour bots Discord",
     "title": "Shadow - Hebergez vos bots Discord (a partir de 2 EUR/mois par bot)",
     "description": "Hebergez et gerez vos bots avec commandes automatiques (prefix et slash), components v2, aide automatique, support multi-langue et variables dynamiques.",
     "ctaStart": "Commencer - 2 EUR/mois",
@@ -26,6 +34,8 @@
       "stopped": "Arrete"
     },
     "card": {
+      "title": "Apercu live de la flotte",
+      "subtitle": "Suivez chaque instance bot depuis une surface operationnelle unique.",
       "instanceMetrics": "Instances: 1 | CPU 35%",
       "manage": "Gerer",
       "preview": "Apercu en temps reel du statut de vos bots"
@@ -80,7 +90,9 @@
     }
   },
   "footer": {
-    "tagline": "Hebergement de bots Discord - plans des 2 EUR/mois par bot"
+    "tagline": "Hebergement de bots Discord - plans des 2 EUR/mois par bot",
+    "github": "GitHub",
+    "copyright": "Copyright {year} {brand}"
   },
   "login": {
     "eyebrow": "Shadow - Hebergement de bots Discord",
@@ -96,12 +108,18 @@
     "loginCta": "Se connecter",
     "tenant": "Tenant {tenantId}",
     "role": "Role: {role}",
+    "roles": {
+      "owner": "Proprietaire",
+      "member": "Membre"
+    },
     "logout": "Se deconnecter",
     "addBot": {
       "title": "Ajouter un bot",
       "description": "Le token est verifie cote API puis chiffre avant stockage.",
       "tokenLabel": "Token bot Discord",
+      "tokenPlaceholder": "MTIz...",
       "displayNameLabel": "Nom daffichage (optionnel)",
+      "displayNamePlaceholder": "Bot support EU",
       "submit": "Ajouter le bot",
       "submitPending": "Validation en cours..."
     },

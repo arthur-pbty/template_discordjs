@@ -4,7 +4,6 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 
-import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { routing, type AppLocale } from "../../i18n/routing";
 import enMessages from "../../messages/en.json";
 import frMessages from "../../messages/fr.json";
@@ -77,11 +76,8 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale}>
-      <body className={`${headingFont.variable} ${monoFont.variable}`}>
+      <body className={`${headingFont.variable} ${monoFont.variable} antialiased`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <div className="locale-switcher-shell">
-            <LanguageSwitcher />
-          </div>
           {children}
         </NextIntlClientProvider>
       </body>

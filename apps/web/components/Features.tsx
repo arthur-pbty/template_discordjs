@@ -9,7 +9,7 @@ export default async function Features() {
       title: t("features.items.autoCommands.title"),
       description: t("features.items.autoCommands.description"),
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M4 7h16v10H4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M8 11h0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -68,11 +68,13 @@ export default async function Features() {
   ];
 
   return (
-    <section>
-      <h2 className="text-2xl font-bold text-white">{t("features.title")}</h2>
-      <p className="mt-2 text-gray-400 max-w-2xl">{t("features.subtitle")}</p>
+    <section className="space-y-6">
+      <div className="space-y-3">
+        <h2>{t("features.title")}</h2>
+        <p className="section-description">{t("features.subtitle")}</p>
+      </div>
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {items.map((it, idx) => (
           <FeatureCard key={idx} title={it.title} description={it.description} icon={it.icon} />
         ))}

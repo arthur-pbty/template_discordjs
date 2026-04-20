@@ -1,5 +1,7 @@
 import { ReactNode } from "react";
 
+import { Card, CardContent } from "./ui/Card";
+
 export default function FeatureCard({
   title,
   description,
@@ -10,17 +12,17 @@ export default function FeatureCard({
   icon: ReactNode;
 }) {
   return (
-    <div className="p-6 bg-gray-900/40 rounded-xl border border-white/6 hover:shadow-lg transition">
-      <div className="flex items-start gap-4">
-        <div className="p-2 bg-white/5 rounded-md text-white flex items-center justify-center">
+    <Card className="h-full border-[var(--border-muted)] bg-[var(--surface)]">
+      <CardContent className="flex h-full items-start gap-4">
+        <div className="flex size-10 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--foreground)]">
           {icon}
         </div>
 
-        <div>
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-          <p className="mt-2 text-sm text-gray-300">{description}</p>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-[var(--foreground)]">{title}</h3>
+          <p className="text-sm text-[var(--foreground-muted)]">{description}</p>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
