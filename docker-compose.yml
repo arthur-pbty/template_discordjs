@@ -90,7 +90,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "4000:4000"
+      - "${API_PORT}:4000"
     networks:
       - edge_net
       - backend_net
